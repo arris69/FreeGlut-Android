@@ -15,32 +15,35 @@ EXTRA_DIST = Common/freeglutdll.def
 #
 # Those source files build the freeglut library
 #
-lib@LIBRARY@_la_SOURCES = Common/freeglut_callbacks.c \
-			 Common/freeglut_cursor.c \
-			 Common/freeglut_display.c \
-			 Common/freeglut_ext.c \
-			 Common/freeglut_font.c \
-			 Common/freeglut_font_data.c \
-			 Common/freeglut_stroke_roman.c \
-			 Common/freeglut_stroke_mono_roman.c \
-			 Common/freeglut_gamemode.c \
-			 Common/freeglut_geometry.c \
-			 Common/freeglut_init.c \
-			 Common/freeglut_input_devices.c \
-			 Common/freeglut_spaceball.c \
-			 Common/freeglut_joystick.c \
-			 Common/freeglut_main.c \
-			 Common/freeglut_menu.c \
-			 Common/freeglut_misc.c \
-			 Common/freeglut_overlay.c \
-			 Common/freeglut_state.c \
-			 Common/freeglut_structure.c \
-			 Common/freeglut_teapot.c \
-			 Common/freeglut_videoresize.c \
-			 Common/freeglut_window.c
+# TODO: uses OpenGL non-ES functions:
+#			 Common/freeglut_font.c
+#			 Common/freeglut_geometry.c
+#			 Common/freeglut_menu.c
+#			 Common/freeglut_teapot.c
+lib@LIBRARY@_la_SOURCES = \
+	Common/freeglut_callbacks.c \
+	Common/freeglut_cursor.c \
+	Common/freeglut_display.c \
+	Common/freeglut_ext.c \
+	Common/freeglut_font_data.c \
+	Common/freeglut_gamemode.c \
+	Common/freeglut_input_devices.c \
+	Common/freeglut_stroke_roman.c \
+	Common/freeglut_stroke_mono_roman.c \
+	Common/freeglut_init.c \
+	Common/freeglut_spaceball.c \
+	Common/freeglut_joystick.c \
+	Common/freeglut_main.c \
+	Common/freeglut_misc.c \
+	Common/freeglut_overlay.c \
+	Common/freeglut_state.c \
+	Common/freeglut_structure.c \
+	Common/freeglut_videoresize.c \
+	Common/freeglut_window.c
 
 if TARGET_HOST_MS_WINDOWS
 lib@LIBRARY@_la_SOURCES += \
+	Common/xparsegeometry_repl.c \
 	mswin/freeglut_cursor_mswin.c \
 	mswin/freeglut_display_mswin.c \
 	mswin/freeglut_ext_mswin.c \
@@ -54,7 +57,11 @@ lib@LIBRARY@_la_SOURCES += \
 	mswin/freeglut_spaceball_mswin.c \
 	mswin/freeglut_state_mswin.c \
 	mswin/freeglut_structure_mswin.c \
-	mswin/freeglut_window_mswin.c
+	mswin/freeglut_window_mswin.c \
+	Common/freeglut_font.c \
+	Common/freeglut_geometry.c \
+	Common/freeglut_menu.c \
+	Common/freeglut_teapot.c
 endif
 
 if TARGET_HOST_POSIX_X11
@@ -74,8 +81,35 @@ lib@LIBRARY@_la_SOURCES += \
 	x11/freeglut_state_x11.c \
 	x11/freeglut_structure_x11.c \
 	x11/freeglut_window_x11.c \
-	x11/freeglut_xinput_x11.c
+	x11/freeglut_xinput_x11.c \
+	Common/freeglut_font.c \
+	Common/freeglut_geometry.c \
+	Common/freeglut_menu.c \
+	Common/freeglut_teapot.c
 endif
+
+if TARGET_HOST_ANDROID
+lib@LIBRARY@_la_SOURCES += \
+	Common/xparsegeometry_repl.c \
+	egl/freeglut_internal_egl.h \
+	egl/freeglut_display_egl.c \
+	egl/freeglut_window_egl.c \
+	android/native_app_glue/android_native_app_glue.c \
+	android/native_app_glue/android_native_app_glue.h \
+	android/freeglut_runtime_android.c \
+	android/freeglut_gamemode_android.c \
+	android/freeglut_input_devices_android.c \
+	android/freeglut_init_android.c \
+	android/freeglut_joystick_android.c \
+	android/freeglut_main_android.c \
+	android/freeglut_spaceball_android.c \
+	android/freeglut_state_android.c \
+	android/freeglut_structure_android.c \
+	android/freeglut_window_android.c \
+	android/opengles_stubs.c \
+	android/freeglut_internal_android.h
+endif
+
 
 #
 # Additional linker flags

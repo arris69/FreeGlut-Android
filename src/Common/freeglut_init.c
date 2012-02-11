@@ -314,7 +314,7 @@ void fgDeinitialize( void )
 }
 
 
-#if TARGET_HOST_MS_WINDOWS
+#if !TARGET_HOST_POSIX_X11
 #define NoValue         0x0000
 #define XValue          0x0001
 #define YValue          0x0002

@@ -100,6 +100,9 @@ static SFG_StrokeFont* fghStrokeByID( void* font )
  */
 void FGAPIENTRY glutBitmapCharacter( void* fontID, int character )
 {
+#ifdef EGL_VERSION_1_0
+/* glBitmap() not available in OpenGL ES */
+#else
     const GLubyte* face;
     SFG_Font* font;
     FREEGLUT_EXIT_IF_NOT_INITIALISED ( "glutBitmapCharacter" );
@@ -126,10 +129,14 @@ void FGAPIENTRY glutBitmapCharacter( void* fontID, int character )
         ( face + 1 )                  /* The packed bitmap data...      */
     );
     glPopClientAttrib( );
+#endif
 }
 
 void FGAPIENTRY glutBitmapString( void* fontID, const unsigned char *string )
 {
+#ifdef EGL_VERSION_1_0
+/* glBitmap() not available in OpenGL ES */
+#else
     unsigned char c;
     float x = 0.0f ;
     SFG_Font* font;
@@ -173,6 +180,7 @@ void FGAPIENTRY glutBitmapString( void* fontID, const unsigned char *string )
         }
 
     glPopClientAttrib( );
+#endif
 }
 
 /*
