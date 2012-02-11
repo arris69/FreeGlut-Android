@@ -37,6 +37,8 @@ struct tagSFG_PlatformDisplay
   /* Used to initialize and deinitialize EGL */
   EGLDisplay          eglDisplay;
   EGLContext          eglContext;
+  EGLConfig           eglContextConfig;
+  EGLint              eglContextFormat;
   struct tagSFG_Window* single_window;
 };
 
@@ -52,7 +54,6 @@ typedef struct tagSFG_PlatformContext SFG_PlatformContext;
 struct tagSFG_PlatformContext
 {
   EGLSurface          eglSurface;
-  GLboolean           init;
 };
 
 

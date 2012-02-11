@@ -93,18 +93,18 @@ lib@LIBRARY@_la_SOURCES += \
 	Common/xparsegeometry_repl.c \
 	egl/freeglut_internal_egl.h \
 	egl/freeglut_display_egl.c \
+	egl/freeglut_init_egl.c \
+	egl/freeglut_structure_egl.c \
 	egl/freeglut_window_egl.c \
 	android/native_app_glue/android_native_app_glue.c \
 	android/native_app_glue/android_native_app_glue.h \
 	android/freeglut_runtime_android.c \
 	android/freeglut_gamemode_android.c \
 	android/freeglut_input_devices_android.c \
-	android/freeglut_init_android.c \
 	android/freeglut_joystick_android.c \
 	android/freeglut_main_android.c \
 	android/freeglut_spaceball_android.c \
 	android/freeglut_state_android.c \
-	android/freeglut_structure_android.c \
 	android/freeglut_window_android.c \
 	android/opengles_stubs.c \
 	android/freeglut_internal_android.h

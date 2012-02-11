@@ -82,7 +82,12 @@ void fgPlatformProcessSingleEvent ( void )
 void fgPlatformMainLoopPreliminaryWork ( void )
 {
   printf("fgPlatformMainLoopPreliminaryWork\n");
-  glutPostRedisplay();
+
+  /* Make sure glue isn't stripped. */
+  /* JNI callbacks need to be bundled even when linking statically */
+  app_dummy();
+
+  glutPostRedisplay(); // TODO: necessary?
 }
 
 void fgPlatformDeinitialiseInputDevices ( void )

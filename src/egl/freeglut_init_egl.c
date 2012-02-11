@@ -36,24 +36,33 @@ void fgPlatformInitialize( const char* displayName )
 {
   fprintf(stderr, "fgPlatformInitialize\n");
   fgState.Initialised = GL_TRUE;
-  // fgDisplay.pDisplay.Display = ...;
-  // fgDisplay.pDisplay.RootWindow = ...;
+
+  /* CreateDisplay */
+  fgDisplay.pDisplay.eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  eglInitialize(fgDisplay.pDisplay.eglDisplay, 0, 0);
+
+  /* CreateContext */
+  fghCreateContext();
+
   // fgDisplay.ScreenWidth = ...;
   // fgDisplay.ScreenHeight = ...;
   // fgDisplay.ScreenWidthMM = ...;
   // fgDisplay.ScreenHeightMM = ...;
-
-  /* Make sure glue isn't stripped. */
-  /* JNI callbacks need to be bundled even when linking statically */
-  app_dummy();
 }
 
 void fgPlatformCloseDisplay ( void )
 {
-  fprintf(stderr, "fgPlatformCloseDisplay: stub\n");
+  if (fgDisplay.pDisplay.eglDisplay != EGL_NO_DISPLAY) {
+    eglTerminate(fgDisplay.pDisplay.eglDisplay);
+    fgDisplay.pDisplay.eglDisplay = EGL_NO_DISPLAY;
+  }
 }
 
 void fgPlatformDestroyContext ( SFG_PlatformDisplay pDisplay, SFG_WindowContextType MContext )
 {
-  fprintf(stderr, "fgPlatformDestroyContext: STUB\n");
+  eglMakeCurrent(pDisplay.eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+  if (pDisplay.eglContext != EGL_NO_CONTEXT) {
+    eglDestroyContext(pDisplay.eglDisplay, pDisplay.eglContext);
+    pDisplay.eglContext = EGL_NO_CONTEXT;
+  }
 }

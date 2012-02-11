@@ -78,7 +78,7 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
     break;
   case APP_CMD_INIT_WINDOW:
     /* The window is being shown, get it ready. */
-    fghCreateEGLContext(app->window);
+    fgDisplay.pDisplay.single_window->Window.Handle = app->window;
     break;
   case APP_CMD_TERM_WINDOW:
     /* The window is being hidden or closed, clean it up. */
@@ -108,19 +108,6 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
  * Tear down the EGL context currently associated with the display.
  */
 static void engine_term_display(SFG_PlatformDisplay* pDisplay) {
-  if (pDisplay->eglDisplay != EGL_NO_DISPLAY) {
-    /* if (engine->surface != EGL_NO_SURFACE) { */
-    /*     eglDestroySurface(engine->display, engine->surface); */
-    /* } */
-    /* engine->surface = EGL_NO_SURFACE; */
-    eglMakeCurrent(pDisplay->eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    if (pDisplay->eglContext != EGL_NO_CONTEXT) {
-      eglDestroyContext(pDisplay->eglDisplay, pDisplay->eglContext);
-    }
-    eglTerminate(pDisplay->eglDisplay);
-  }
-  pDisplay->eglDisplay = EGL_NO_DISPLAY;
-  pDisplay->eglContext = EGL_NO_CONTEXT;
 }
 
 /**

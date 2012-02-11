@@ -1,5 +1,5 @@
 /*
- * freeglut_structure_android.c
+ * freeglut_structure_egl.c
  *
  * Windows and menus need tree structure
  *
@@ -30,7 +30,5 @@ extern SFG_Structure fgStructure;
 
 void fgPlatformCreateWindow ( SFG_Window *window )
 {
-  printf("fgPlatformCreateWindow\n");
-  window->Window.pContext.eglSurface = (EGLSurface)EGL_UNKNOWN;
-  window->Window.pContext.init = GL_FALSE;
+  window->Window.pContext.eglSurface = EGL_NO_SURFACE;
 }

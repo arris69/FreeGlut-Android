@@ -29,13 +29,7 @@
 /**
  * Initialize an EGL context for the current display.
  */
-void fghCreateEGLContext( EGLNativeWindowType handle ) {
-  printf("fghCreateEGLContext %p\n", (void*)handle);
-  //SFG_Window* window = fgWindowByID(glutGetWindow());
-  SFG_Window* window = fgDisplay.pDisplay.single_window;
-  window->Window.Handle = handle;
-  window->Window.pContext.init = GL_TRUE;
-
+void fghCreateContext( ) {
   /*
    * Here specify the attributes of the desired configuration.
    * Below, we select an EGLConfig with at least 8 bits per color
@@ -52,17 +46,15 @@ void fghCreateEGLContext( EGLNativeWindowType handle ) {
     EGL_DEPTH_SIZE, (fgState.DisplayMode & GLUT_DEPTH) ? 24 : 0,
     EGL_NONE
   };
-  EGLint w, h, format;
+  EGLint format;
   EGLint numConfigs;
   EGLConfig config;
-  EGLSurface surface;
   EGLContext context;
 
-  EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  EGLDisplay display = fgDisplay.pDisplay.eglDisplay;
+
   /* TODO : apply DisplayMode */
   /*        (GLUT_DEPTH already applied in attribs[] above) */
-
-  eglInitialize(display, 0, 0);
 
   /* Here, the application chooses the configuration it desires. In this
    * sample, we have a very simplified selection process, where we pick
@@ -75,9 +67,6 @@ void fghCreateEGLContext( EGLNativeWindowType handle ) {
    * ANativeWindow buffers to match, using EGL_NATIVE_VISUAL_ID. */
   eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
 
-  ANativeWindow_setBuffersGeometry(window->Window.Handle, 0, 0, format);
-
-  surface = eglCreateWindowSurface(display, config, window->Window.Handle, NULL);
   /* Ensure OpenGLES 2.0 context */
   static const EGLint ctx_attribs[] = {
     EGL_CONTEXT_CLIENT_VERSION, 2,
@@ -85,18 +74,40 @@ void fghCreateEGLContext( EGLNativeWindowType handle ) {
   };
   context = eglCreateContext(display, config, EGL_NO_CONTEXT, ctx_attribs);
 
+  fgDisplay.pDisplay.eglContext = context;
+  fgDisplay.pDisplay.eglContextConfig = config;
+  fgDisplay.pDisplay.eglContextFormat = format;
+}
+
+/*
+ * Really opens a window when handle is available
+ */
+EGLSurface fghEGLPlatformOpenWindow( EGLNativeWindowType handle )
+{
+  EGLDisplay display = fgDisplay.pDisplay.eglDisplay;
+  EGLContext context = fgDisplay.pDisplay.eglContext;
+  EGLConfig  config  = fgDisplay.pDisplay.eglContextConfig;
+
+  EGLSurface surface = eglCreateWindowSurface(display, config, handle, NULL);
   if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
     fprintf(stderr, "Unable to eglMakeCurrent");
-    window->Window.pContext.eglSurface = EGL_NO_SURFACE;
     return;
   }
 
-  eglQuerySurface(display, surface, EGL_WIDTH, &w);
-  eglQuerySurface(display, surface, EGL_HEIGHT, &h);
+  //EGLint w, h;
+  //eglQuerySurface(display, surface, EGL_WIDTH, &w);
+  //eglQuerySurface(display, surface, EGL_HEIGHT, &h);
 
-  fgDisplay.pDisplay.eglDisplay = display;
-  fgDisplay.pDisplay.eglContext = context;
-  window->Window.pContext.eglSurface = surface;
+  return surface;
+}
 
-  return;
+/*
+ * Closes a window, destroying the frame and OpenGL context
+ */
+void fgPlatformCloseWindow( SFG_Window* window )
+{
+  if (window->Window.pContext.eglSurface != EGL_NO_SURFACE) {
+    eglDestroySurface(fgDisplay.pDisplay.eglDisplay, window->Window.pContext.eglSurface);
+    window->Window.pContext.eglSurface = EGL_NO_SURFACE;
+  }
 }

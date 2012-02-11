@@ -30,11 +30,6 @@
 #include <GL/freeglut.h>
 #include "../Common/freeglut_internal.h"
 
-void fgPlatformSetWindow ( SFG_Window *window )
-{
-  /* TODO: only a single window possible? */
-}
-
 /*
  * Opens a window. Requires a SFG_Window object created and attached
  * to the freeglut structure. OpenGL context is created here.
@@ -60,24 +55,26 @@ void fgPlatformOpenWindow( SFG_Window* window, const char* title,
   /* Normally events are processed through glutMainLoop(), but the
      user didn't call it yet, and the Android may not have initialized
      the View yet.  So we need to wait for that to happen. */
-  while (window->Window.pContext.init == GL_FALSE) {
+  /* We can't return from this function before the OpenGL context is
+     properly made current with a valid surface. So we wait for the
+     surface. */
+  while (fgDisplay.pDisplay.single_window->Window.Handle == NULL) {
     /* APP_CMD_INIT_WINDOW will do the job */
-    /* printf("call fgPlatformProcessSingleEvent\n"); */
     fgPlatformProcessSingleEvent();
   }
+
+  EGLDisplay display = fgDisplay.pDisplay.eglDisplay;
+  EGLint format = fgDisplay.pDisplay.eglContextFormat;
+  ANativeWindow_setBuffersGeometry(window->Window.Handle, 0, 0, format);
+  window->Window.pContext.eglSurface = fghEGLPlatformOpenWindow(window->Window.Handle);
 
   window->State.Visible = GL_TRUE;
 }
 
-
-/*
- * Closes a window, destroying the frame and OpenGL context
- */
-void fgPlatformCloseWindow( SFG_Window* window )
+void fgPlatformSetWindow ( SFG_Window *window )
 {
-  fprintf(stderr, "fgPlatformCloseWindow: STUB\n");
+  /* TODO: only a single window possible? */
 }
-
 
 /*
  * This function makes the current window visible
