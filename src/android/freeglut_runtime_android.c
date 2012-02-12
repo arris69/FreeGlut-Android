@@ -87,19 +87,19 @@ static void onNativeWindowRedrawNeeded(ANativeActivity* activity, ANativeWindow*
  * accessed using accessed.
  * TODO: parse directories recursively
  */
-static void extract_assets(struct android_app* state_param) {
+static void extract_assets(struct android_app* app) {
   /* Get usable JNI context */
-  JNIEnv* env = state_param->activity->env;
-  JavaVM* vm = state_param->activity->vm;
+  JNIEnv* env = app->activity->env;
+  JavaVM* vm = app->activity->vm;
   (*vm)->AttachCurrentThread(vm, &env, NULL);
   
-  /* Get a handle on our calling NativeActivity instance */
   {
-    jclass activityClass = (*env)->GetObjectClass(env, state_param->activity->clazz);
+    /* Get a handle on our calling NativeActivity class */
+    jclass activityClass = (*env)->GetObjectClass(env, app->activity->clazz);
     
     /* Get path to cache dir (/data/data/org.myapp/cache) */
     jmethodID getCacheDir = (*env)->GetMethodID(env, activityClass, "getCacheDir", "()Ljava/io/File;");
-    jobject file = (*env)->CallObjectMethod(env, state_param->activity->clazz, getCacheDir);
+    jobject file = (*env)->CallObjectMethod(env, app->activity->clazz, getCacheDir);
     jclass fileClass = (*env)->FindClass(env, "java/io/File");
     jmethodID getAbsolutePath = (*env)->GetMethodID(env, fileClass, "getAbsolutePath", "()Ljava/lang/String;");
     jstring jpath = (jstring)(*env)->CallObjectMethod(env, file, getAbsolutePath);
@@ -112,7 +112,7 @@ static void extract_assets(struct android_app* state_param) {
     
     /* Pre-extract assets, to avoid Android-specific file opening */
     {
-      AAssetManager* mgr = state_param->activity->assetManager;
+      AAssetManager* mgr = app->activity->assetManager;
       AAssetDir* assetDir = AAssetManager_openDir(mgr, "");
       const char* filename = (const char*)NULL;
       while ((filename = AAssetDir_getNextFileName(assetDir)) != NULL) {
@@ -135,18 +135,18 @@ static void extract_assets(struct android_app* state_param) {
  * android_native_app_glue.  It runs in its own thread, with its own
  * event loop for receiving input events and doing other things.
  */
-void android_main(struct android_app* state_param) {
+void android_main(struct android_app* app) {
   LOGI("android_main");
 
   // Register window resize callback
-  state_param->activity->callbacks->onNativeWindowResized = onNativeWindowResized;
-  state_param->activity->callbacks->onContentRectChanged = onContentRectChanged;
-  state_param->activity->callbacks->onNativeWindowRedrawNeeded = onNativeWindowRedrawNeeded;
+  app->activity->callbacks->onNativeWindowResized = onNativeWindowResized;
+  app->activity->callbacks->onContentRectChanged = onContentRectChanged;
+  app->activity->callbacks->onNativeWindowRedrawNeeded = onNativeWindowRedrawNeeded;
   
-  state_param->onAppCmd = handle_cmd;
-  state_param->onInputEvent = handle_input;
+  app->onAppCmd = handle_cmd;
+  app->onInputEvent = handle_input;
 
-  extract_assets(state_param);
+  extract_assets(app);
 
   /* Call user's main */
   {
