@@ -58,32 +58,33 @@
 
 extern int main(int argc, char* argv[]);
 
+/** NativeActivity Callbacks **/
+/* Caution: they are called in the native_activity thread, not the
+   FreeGLUT thread. Use android_app_write_cmd. */
 
-static void onNativeWindowResized(ANativeActivity* activity, ANativeWindow* window) {
-    LOGI("onNativeWindowResized: %p\n", activity);
-    // Sent an event to the queue so it gets handled in the app thread
-    // after other waiting events, rather than asynchronously in the
-    // native_app_glue event thread:
-    struct android_app* app = (struct android_app*)activity->instance;
-    // TODO: too early?? the detected window size is the previous one
-    android_app_write_cmd(app, APP_CMD_WINDOW_RESIZED);
-}
+/* Could be used instead of onNativeWindowRedrawNeeded */
+/* Deals with status bar presence */
 static void onContentRectChanged(ANativeActivity* activity, const ARect* rect) {
-    LOGI("onContentRectChanged: l=%d,t=%d,r=%d,b=%d", rect->left, rect->top, rect->right, rect->bottom);
-    // Make Android realize the screen size changed, needed when the
-    // GLUT app refreshes only on event rather than in loop.  Beware
-    // that we're not in the GLUT thread here, but in the event one.
-    struct android_app* app = (struct android_app*)activity->instance;
-    // TODO: too early?? the detected window size is the previous one
-    if (app->window)
-      android_app_write_cmd(app, APP_CMD_WINDOW_RESIZED);
+  LOGI("onContentRectChanged: l=%d,t=%d,r=%d,b=%d", rect->left, rect->top, rect->right, rect->bottom);
+}
+
+/* Bug: not called during a resize in android-9, only once on startup :/ */
+static void onNativeWindowResized(ANativeActivity* activity, ANativeWindow* window) {
+  LOGI("onNativeWindowResized: %p\n", (void*)activity);
+}
+
+/* Called after a resize */
+static void onNativeWindowRedrawNeeded(ANativeActivity* activity, ANativeWindow* window) {
+  LOGI("onNativeWindowRedrawNeeded: %p\n", (void*)activity);
+  struct android_app* app = (struct android_app*)activity->instance;
+  //if (fgDisplay.pDisplay.single_window->Window.pContext.eglSurface != EGL_NO_SURFACE)
+  android_app_write_cmd(app, APP_CMD_WINDOW_RESIZED);
 }
 
 /**
  * Process the next input event.
  */
 static int32_t handle_input(struct android_app* app, AInputEvent* event) {
-  android_app_write_cmd(app, APP_CMD_WINDOW_RESIZED);
   return 0;  /* not handled */
 }
 
@@ -91,42 +92,54 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event) {
  * Process the next main command.
  */
 static void handle_cmd(struct android_app* app, int32_t cmd) {
-  printf("runtime: handle_cmd %d (wait for %d) tid=%d\n", cmd, APP_CMD_INIT_WINDOW, gettid());
   switch (cmd) {
   case APP_CMD_SAVE_STATE:
     /* The system has asked us to save our current state.  Do so. */
+    LOGI("handle_cmd: APP_CMD_SAVE_STATE");
     break;
   case APP_CMD_INIT_WINDOW:
     /* The window is being shown, get it ready. */
-    /* glPlatformOpenWindow is waiting for Handle to be defined: */
+    LOGI("handle_cmd: APP_CMD_INIT_WINDOW");
     fgDisplay.pDisplay.single_window->Window.Handle = app->window;
+    /* glPlatformOpenWindow was waiting for Handle to be defined and
+       will now return from fgPlatformProcessSingleEvent() */
     break;
   case APP_CMD_TERM_WINDOW:
     /* The window is being hidden or closed, clean it up. */
+    LOGI("handle_cmd: APP_CMD_TERM_WINDOW");
     fgDestroyWindow(fgDisplay.pDisplay.single_window);
     break;
   case APP_CMD_DESTROY:
     /* Not reached because GLUT exit()s when last window is closed */
+    LOGI("handle_cmd: APP_CMD_DESTROY");
     break;
   case APP_CMD_GAINED_FOCUS:
+    LOGI("handle_cmd: APP_CMD_GAINED_FOCUS");
     break;
   case APP_CMD_LOST_FOCUS:
+    LOGI("handle_cmd: APP_CMD_LOST_FOCUS");
     break;
   case APP_CMD_CONFIG_CHANGED:
     /* Handle rotation / orientation change */
+    LOGI("handle_cmd: APP_CMD_CONFIG_CHANGED");
     break;
   case APP_CMD_WINDOW_RESIZED:
+    LOGI("handle_cmd: APP_CMD_WINDOW_RESIZED");
+    glutSwapBuffers(); // needed to get new window size
     {
       SFG_Window* window = fgDisplay.pDisplay.single_window;
       int32_t width = ANativeWindow_getWidth(window->Window.Handle);
       int32_t height = ANativeWindow_getHeight(window->Window.Handle);
-      LOGI("APP_CMD_WINDOW_RESIZED-engine: w=%d, h=%d", width, height);
+      LOGI("handle_cmd:   w=%d, h=%d", width, height);
       if( FETCH_WCB( *window, Reshape ) )
 	INVOKE_WCB( *window, Reshape, ( width, height ) );
       else
 	glViewport( 0, 0, width, height );
       glutPostRedisplay();
     }
+    break;
+  default:
+    LOGI("handle_cmd: unhandled cmd=%d", cmd);
   }
 }
 
@@ -189,6 +202,7 @@ void android_main(struct android_app* state_param) {
   // Register window resize callback
   state_param->activity->callbacks->onNativeWindowResized = onNativeWindowResized;
   state_param->activity->callbacks->onContentRectChanged = onContentRectChanged;
+  state_param->activity->callbacks->onNativeWindowRedrawNeeded = onNativeWindowRedrawNeeded;
   
   state_param->onAppCmd = handle_cmd;
   state_param->onInputEvent = handle_input;

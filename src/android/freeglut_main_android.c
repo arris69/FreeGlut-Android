@@ -71,7 +71,8 @@ void fgPlatformProcessSingleEvent ( void )
   int ident;
   int events;
   struct android_poll_source* source;
-    while ((ident=ALooper_pollAll(0, NULL, &events, (void**)&source)) >= 0) {
+  //while ((ident=ALooper_pollAll(0, NULL, &events, (void**)&source)) >= 0) {
+  if ((ident=ALooper_pollOnce(0, NULL, &events, (void**)&source)) >= 0) {
     /* Process this event. */
     if (source != NULL) {
       source->process(source->app, source);
@@ -84,7 +85,7 @@ void fgPlatformMainLoopPreliminaryWork ( void )
   printf("fgPlatformMainLoopPreliminaryWork\n");
 
   /* Make sure glue isn't stripped. */
-  /* JNI callbacks need to be bundled even when linking statically */
+  /* JNI entry points need to be bundled even when linking statically */
   app_dummy();
 
   glutPostRedisplay(); // TODO: necessary?
