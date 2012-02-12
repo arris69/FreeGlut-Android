@@ -28,9 +28,29 @@
 #include <GL/freeglut.h>
 #include "../Common/freeglut_internal.h"
 
+#include <android/native_window.h>
+
 int fgPlatformGlutGet ( GLenum eWhat )
 {
   fprintf(stderr, "fgPlatformGlutGet: STUB\n");
+
+  switch (eWhat) {
+    case GLUT_WINDOW_WIDTH:
+    case GLUT_WINDOW_HEIGHT:
+      {
+        if ( fgStructure.CurrentWindow == NULL )
+	  return 0;
+	int32_t width = ANativeWindow_getWidth(fgStructure.CurrentWindow->Window.Handle);
+	int32_t height = ANativeWindow_getHeight(fgStructure.CurrentWindow->Window.Handle);
+        switch ( eWhat )
+	  {
+	  case GLUT_WINDOW_WIDTH:
+	    return width;
+	  case GLUT_WINDOW_HEIGHT:
+	    return height;
+	  }
+      }
+  }
   return -1;
 }
 
@@ -42,45 +62,45 @@ int fgPlatformGlutDeviceGet ( GLenum eWhat )
 
 int fgPlatformGlutLayerGet( GLenum eWhat )
 {
-    /*
-     * This is easy as layers are not implemented ;-)
-     *
-     * XXX Can we merge the UNIX/X11 and WIN32 sections?  Or
-     * XXX is overlay support planned?
-     */
-    switch( eWhat )
+  /*
+   * This is easy as layers are not implemented ;-)
+   *
+   * XXX Can we merge the UNIX/X11 and WIN32 sections?  Or
+   * XXX is overlay support planned?
+   */
+  switch( eWhat )
     {
     case GLUT_OVERLAY_POSSIBLE:
-        return 0;
+      return 0;
 
     case GLUT_LAYER_IN_USE:
-        return GLUT_NORMAL;
+      return GLUT_NORMAL;
 
     case GLUT_HAS_OVERLAY:
-        return 0;
+      return 0;
 
     case GLUT_TRANSPARENT_INDEX:
-        /*
-         * Return just anything, which is always defined as zero
-         *
-         * XXX HUH?
-         */
-        return 0;
+      /*
+       * Return just anything, which is always defined as zero
+       *
+       * XXX HUH?
+       */
+      return 0;
 
     case GLUT_NORMAL_DAMAGED:
-        /* XXX Actually I do not know. Maybe. */
-        return 0;
+      /* XXX Actually I do not know. Maybe. */
+      return 0;
 
     case GLUT_OVERLAY_DAMAGED:
-        return -1;
+      return -1;
 
     default:
-        fgWarning( "glutLayerGet(): missing enum handle %d", eWhat );
-        break;
+      fgWarning( "glutLayerGet(): missing enum handle %d", eWhat );
+      break;
     }
 
-    /* And fail. That's good. Programs do love failing. */
-    return -1;
+  /* And fail. That's good. Programs do love failing. */
+  return -1;
 }
 
 
