@@ -78,10 +78,15 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
     break;
   case APP_CMD_INIT_WINDOW:
     /* The window is being shown, get it ready. */
+    /* glPlatformOpenWindow is waiting for Handle to be defined: */
     fgDisplay.pDisplay.single_window->Window.Handle = app->window;
     break;
   case APP_CMD_TERM_WINDOW:
     /* The window is being hidden or closed, clean it up. */
+    fgDestroyWindow(fgDisplay.pDisplay.single_window);
+    break;
+  case APP_CMD_DESTROY:
+    /* Not reached because GLUT exit()s when last window is closed */
     break;
   case APP_CMD_GAINED_FOCUS:
     break;
@@ -92,7 +97,7 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
     break;
   case APP_CMD_WINDOW_RESIZED:
     {
-      SFG_Window* window = fgWindowByID(glutGetWindow());
+      SFG_Window* window = fgDisplay.pDisplay.single_window;
       int32_t width = ANativeWindow_getWidth(window->Window.Handle);
       int32_t height = ANativeWindow_getHeight(window->Window.Handle);
       LOGI("APP_CMD_WINDOW_RESIZED-engine: w=%d, h=%d", width, height);
@@ -102,12 +107,6 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
 	glViewport( 0, 0, width, height );
     }
   }
-}
-
-/**
- * Tear down the EGL context currently associated with the display.
- */
-static void engine_term_display(SFG_PlatformDisplay* pDisplay) {
 }
 
 /**
@@ -179,9 +178,6 @@ void android_main(struct android_app* state_param) {
     char* argv[] = {progname, NULL};
     main(1, argv);
   }
-
-  /* Destroy OpenGL context */
-  engine_term_display(&fgDisplay.pDisplay);
 
   LOGI("android_main: end");
   exit(0);
