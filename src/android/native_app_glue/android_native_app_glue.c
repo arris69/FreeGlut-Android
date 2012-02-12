@@ -273,7 +273,7 @@ static struct android_app* android_app_create(ANativeActivity* activity,
     return android_app;
 }
 
-static void android_app_write_cmd(struct android_app* android_app, int8_t cmd) {
+/* static  */void android_app_write_cmd(struct android_app* android_app, int8_t cmd) {
     if (write(android_app->msgwrite, &cmd, sizeof(cmd)) != sizeof(cmd)) {
         LOGI("Failure writing android_app cmd: %s\n", strerror(errno));
     }

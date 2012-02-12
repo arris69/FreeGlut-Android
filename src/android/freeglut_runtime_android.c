@@ -47,6 +47,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
+#include <android/native_window.h>
 #include "android/native_app_glue/android_native_app_glue.h"
 
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "FreeGLUT", __VA_ARGS__))
@@ -55,15 +56,34 @@
 #include <GL/freeglut.h>
 #include "Common/freeglut_internal.h"
 
-struct android_app* state;
 extern int main(int argc, char* argv[]);
+
+
+static void onNativeWindowResized(ANativeActivity* activity, ANativeWindow* window) {
+    LOGI("onNativeWindowResized: %p\n", activity);
+    // Sent an event to the queue so it gets handled in the app thread
+    // after other waiting events, rather than asynchronously in the
+    // native_app_glue event thread:
+    struct android_app* app = (struct android_app*)activity->instance;
+    // TODO: too early?? the detected window size is the previous one
+    android_app_write_cmd(app, APP_CMD_WINDOW_RESIZED);
+}
+static void onContentRectChanged(ANativeActivity* activity, const ARect* rect) {
+    LOGI("onContentRectChanged: l=%d,t=%d,r=%d,b=%d", rect->left, rect->top, rect->right, rect->bottom);
+    // Make Android realize the screen size changed, needed when the
+    // GLUT app refreshes only on event rather than in loop.  Beware
+    // that we're not in the GLUT thread here, but in the event one.
+    struct android_app* app = (struct android_app*)activity->instance;
+    // TODO: too early?? the detected window size is the previous one
+    if (app->window)
+      android_app_write_cmd(app, APP_CMD_WINDOW_RESIZED);
+}
 
 /**
  * Process the next input event.
  */
 static int32_t handle_input(struct android_app* app, AInputEvent* event) {
-  LOGI("runtime: handle_input tid=%d\n", gettid());
-  glutPostRedisplay();
+  android_app_write_cmd(app, APP_CMD_WINDOW_RESIZED);
   return 0;  /* not handled */
 }
 
@@ -105,6 +125,7 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
 	INVOKE_WCB( *window, Reshape, ( width, height ) );
       else
 	glViewport( 0, 0, width, height );
+      glutPostRedisplay();
     }
   }
 }
@@ -165,10 +186,12 @@ static void extract_assets(struct android_app* state_param) {
 void android_main(struct android_app* state_param) {
   LOGI("android_main");
 
-  state = state_param;
+  // Register window resize callback
+  state_param->activity->callbacks->onNativeWindowResized = onNativeWindowResized;
+  state_param->activity->callbacks->onContentRectChanged = onContentRectChanged;
+  
   state_param->onAppCmd = handle_cmd;
   state_param->onInputEvent = handle_input;
-  printf("state->userData: %p\n", state->userData);
 
   extract_assets(state_param);
 
