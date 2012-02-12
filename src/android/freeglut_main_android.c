@@ -112,18 +112,10 @@ void handle_cmd(struct android_app* app, int32_t cmd) {
     break;
   case APP_CMD_WINDOW_RESIZED:
     LOGI("handle_cmd: APP_CMD_WINDOW_RESIZED");
-    glutSwapBuffers(); // needed to get new window size
-    {
-      SFG_Window* window = fgDisplay.pDisplay.single_window;
-      int32_t width = ANativeWindow_getWidth(window->Window.Handle);
-      int32_t height = ANativeWindow_getHeight(window->Window.Handle);
-      LOGI("handle_cmd:   w=%d, h=%d", width, height);
-      if( FETCH_WCB( *window, Reshape ) )
-	INVOKE_WCB( *window, Reshape, ( width, height ) );
-      else
-	glViewport( 0, 0, width, height );
+    if (fgDisplay.pDisplay.single_window->Window.pContext.eglSurface != EGL_NO_SURFACE)
+      /* Make ProcessSingleEvent detect the new size, only available
+	 after the next SwapBuffer */
       glutPostRedisplay();
-    }
     break;
   default:
     LOGI("handle_cmd: unhandled cmd=%d", cmd);
@@ -132,12 +124,44 @@ void handle_cmd(struct android_app* app, int32_t cmd) {
 
 void fgPlatformProcessSingleEvent ( void )
 {
+  static int32_t last_width = -1;
+  static int32_t last_height = -1;
+
+  /* When the screen is resized, the window handle still points to the
+     old window until the next SwapBuffer, while it's crucial to set
+     the size (onShape) correctly before the next onDisplay callback.
+     Plus we don't know if the next SwapBuffer already occurred at the
+     time we process the event (e.g. during onDisplay). */
+  /* So we do the check each time rather than on event. */
+  /* Interestingly, on a Samsung Galaxy S/PowerVR SGX540 GPU/Android
+     2.3, that next SwapBuffer is fake (but still necessary to get the
+     new size). */
+  SFG_Window* window = fgDisplay.pDisplay.single_window;
+  if (window != NULL && window->Window.Handle != NULL) {
+    int32_t width = ANativeWindow_getWidth(window->Window.Handle);
+    int32_t height = ANativeWindow_getHeight(window->Window.Handle);
+    if (width != last_width || height != last_height) {
+      last_width = width;
+      last_height = height;
+      LOGI("width=%d, height=%d", width, height);
+      if( FETCH_WCB( *window, Reshape ) )
+	INVOKE_WCB( *window, Reshape, ( width, height ) );
+      else
+	glViewport( 0, 0, width, height );
+      glutPostRedisplay();
+    }
+  }
+
   /* Read pending event. */
   int ident;
   int events;
   struct android_poll_source* source;
-  //while ((ident=ALooper_pollAll(0, NULL, &events, (void**)&source)) >= 0) {
-  if ((ident=ALooper_pollOnce(0, NULL, &events, (void**)&source)) >= 0) {
+  /* This is called "ProcessSingleEvent" but this means we'd only
+     process ~60 (screen Hz) mouse events per second, plus other ports
+     are processing all events already.  So let's process all pending
+     events. */
+  /* if ((ident=ALooper_pollOnce(0, NULL, &events, (void**)&source)) >= 0) { */
+  while ((ident=ALooper_pollAll(0, NULL, &events, (void**)&source)) >= 0) {
     /* Process this event. */
     if (source != NULL) {
       source->process(source->app, source);
@@ -152,8 +176,6 @@ void fgPlatformMainLoopPreliminaryWork ( void )
   /* Make sure glue isn't stripped. */
   /* JNI entry points need to be bundled even when linking statically */
   app_dummy();
-
-  glutPostRedisplay(); // TODO: necessary?
 }
 
 void fgPlatformDeinitialiseInputDevices ( void )

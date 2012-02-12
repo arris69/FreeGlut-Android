@@ -74,7 +74,7 @@ static void onNativeWindowResized(ANativeActivity* activity, ANativeWindow* wind
   LOGI("onNativeWindowResized: %p\n", (void*)activity);
 }
 
-/* Called after a resize */
+/* Called after a resize, compensate broken onNativeWindowResized */
 static void onNativeWindowRedrawNeeded(ANativeActivity* activity, ANativeWindow* window) {
   LOGI("onNativeWindowRedrawNeeded: %p\n", (void*)activity);
   struct android_app* app = (struct android_app*)activity->instance;

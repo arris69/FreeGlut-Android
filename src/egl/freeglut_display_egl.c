@@ -26,7 +26,11 @@
 #include <GL/freeglut.h>
 #include "../Common/freeglut_internal.h"
 
+#include <android/log.h>
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "FreeGLUT", __VA_ARGS__))
+
 void fgPlatformGlutSwapBuffers( SFG_PlatformDisplay *pDisplayPtr, SFG_Window* CurrentWindow )
 {
+  /* LOGI("Swap!"); */
   eglSwapBuffers( pDisplayPtr->eglDisplay, CurrentWindow->Window.pContext.eglSurface );
 }
