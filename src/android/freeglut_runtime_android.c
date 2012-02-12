@@ -53,8 +53,9 @@
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "FreeGLUT", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "FreeGLUT", __VA_ARGS__))
 
-#include <GL/freeglut.h>
-#include "Common/freeglut_internal.h"
+/* Cf. freeglut_main_android.c */
+extern int32_t handle_input(struct android_app* app, AInputEvent* event);
+extern void handle_cmd(struct android_app* app, int32_t cmd);
 
 extern int main(int argc, char* argv[]);
 
@@ -79,68 +80,6 @@ static void onNativeWindowRedrawNeeded(ANativeActivity* activity, ANativeWindow*
   struct android_app* app = (struct android_app*)activity->instance;
   //if (fgDisplay.pDisplay.single_window->Window.pContext.eglSurface != EGL_NO_SURFACE)
   android_app_write_cmd(app, APP_CMD_WINDOW_RESIZED);
-}
-
-/**
- * Process the next input event.
- */
-static int32_t handle_input(struct android_app* app, AInputEvent* event) {
-  return 0;  /* not handled */
-}
-
-/**
- * Process the next main command.
- */
-static void handle_cmd(struct android_app* app, int32_t cmd) {
-  switch (cmd) {
-  case APP_CMD_SAVE_STATE:
-    /* The system has asked us to save our current state.  Do so. */
-    LOGI("handle_cmd: APP_CMD_SAVE_STATE");
-    break;
-  case APP_CMD_INIT_WINDOW:
-    /* The window is being shown, get it ready. */
-    LOGI("handle_cmd: APP_CMD_INIT_WINDOW");
-    fgDisplay.pDisplay.single_window->Window.Handle = app->window;
-    /* glPlatformOpenWindow was waiting for Handle to be defined and
-       will now return from fgPlatformProcessSingleEvent() */
-    break;
-  case APP_CMD_TERM_WINDOW:
-    /* The window is being hidden or closed, clean it up. */
-    LOGI("handle_cmd: APP_CMD_TERM_WINDOW");
-    fgDestroyWindow(fgDisplay.pDisplay.single_window);
-    break;
-  case APP_CMD_DESTROY:
-    /* Not reached because GLUT exit()s when last window is closed */
-    LOGI("handle_cmd: APP_CMD_DESTROY");
-    break;
-  case APP_CMD_GAINED_FOCUS:
-    LOGI("handle_cmd: APP_CMD_GAINED_FOCUS");
-    break;
-  case APP_CMD_LOST_FOCUS:
-    LOGI("handle_cmd: APP_CMD_LOST_FOCUS");
-    break;
-  case APP_CMD_CONFIG_CHANGED:
-    /* Handle rotation / orientation change */
-    LOGI("handle_cmd: APP_CMD_CONFIG_CHANGED");
-    break;
-  case APP_CMD_WINDOW_RESIZED:
-    LOGI("handle_cmd: APP_CMD_WINDOW_RESIZED");
-    glutSwapBuffers(); // needed to get new window size
-    {
-      SFG_Window* window = fgDisplay.pDisplay.single_window;
-      int32_t width = ANativeWindow_getWidth(window->Window.Handle);
-      int32_t height = ANativeWindow_getHeight(window->Window.Handle);
-      LOGI("handle_cmd:   w=%d, h=%d", width, height);
-      if( FETCH_WCB( *window, Reshape ) )
-	INVOKE_WCB( *window, Reshape, ( width, height ) );
-      else
-	glViewport( 0, 0, width, height );
-      glutPostRedisplay();
-    }
-    break;
-  default:
-    LOGI("handle_cmd: unhandled cmd=%d", cmd);
-  }
 }
 
 /**
