@@ -1,24 +1,60 @@
 Cross-compilation from GNU/Linux (static and shared DLL)
 ========================================================
 
-Install MinGW32 and prepare FreeGLUT on Debian/Ubuntu:
+Install MinGW32 on Debian/Ubuntu:
 
   apt-get install mingw32
-  ./configure --host=i586-mingw32msvc --prefix=/freeglut
 
-Install MinGW32 and prepare FreeGLUT on Fedora:
+Install MinGW32 on Fedora:
 
   yum install mingw32-gcc
+
+
+With the GNU Autotools
+----------------------
+
+Prepare FreeGLUT on Debian/Ubuntu:
+
+  ./configure --host=i586-mingw32msvc --prefix=/freeglut
+
+Prepare FreeGLUT on Fedora:
+
   ./configure --host=i686-pc-mingw32 --prefix=/freeglut
 
 Cross-compile!
 
-  make
+  make -j4
   make install DESTDIR=$(pwd)
 
-Everything is in the new freeglut/ directory.
-The .dll is in the freeglut/bin/.
+Everything is now in the new 'freeglut/' directory.
+The .dll is in 'freeglut/bin/'.
 
+
+With CMake
+----------
+
+Prepare compilation on Debian/Ubuntu:
+
+  GNU_HOST=i586-mingw32msvc
+
+Prepare compilation on Fedora:
+
+  GNU_HOST=i686-pc-mingw32
+
+Cross-compile!
+
+  cmake -D GNU_HOST=$GNU_HOST \
+    -D CMAKE_TOOLCHAIN_FILE=mingw_cross_toolchain.cmake \
+    -D CMAKE_INSTALL_PREFIX=/freeglut .
+  make -j4
+  make install DESTDIR=$(pwd)
+
+Everything is now in the new 'freeglut/' directory.
+The .dll is in 'freeglut/lib/'.
+
+
+Compiling your code
+-------------------
 
 Compilation of your own programs is done as usual.
 See README.cygwin_mingw for details.

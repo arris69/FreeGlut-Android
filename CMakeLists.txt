@@ -85,6 +85,7 @@ OPTION(BUILD_SHARED_LIBS "Build FreeGLUT shared library." ON)
 OPTION(BUILD_STATIC_LIBS "Build FreeGLUT static library." ON)
 
 FIND_PACKAGE(OpenGL REQUIRED)
+LIST(APPEND LIBS ${OPENGL_LIBRARY})
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include ${OPENGL_INCLUDE_DIR})
 
@@ -102,7 +103,11 @@ if(UNIX)
 	ENDIF()
 	IF(X11_xf86vmode_FOUND)
 		SET(HAVE_X11_EXTENSIONS_XF86VMODE_H TRUE)
-		LIST(APPEND LIBS ${X11_xf86vmode_LIB})
+		# Work-around http://www.cmake.org/Bug/bug_view_page.php?bug_id=6976
+		IF(NOT "${X11_Xxf86vm_LIB}")
+			SET(X11_Xxf86vm_LIB "Xxf86vm")
+		ENDIF()
+		LIST(APPEND LIBS ${X11_Xxf86vm_LIB})
 	ENDIF()
 ENDIF()
 
@@ -134,6 +139,7 @@ ENDIF()
 
 
 IF(WIN32)
+	LIST(APPEND LIBS winmm)
 	IF(BUILD_SHARED_LIBS)
 		LIST(APPEND FREEGLUT_SRCS src/Common/freeglutdll.def freeglut.rc)
 		# XXX I assume that if we want both shared and static this one is appropriate
@@ -150,8 +156,9 @@ ELSE()
 	#   on Xrandr or Xxf86vm)
 	SET_TARGET_PROPERTIES(freeglut PROPERTIES VERSION 3.9.0 SOVERSION 3 OUTPUT_NAME glut)
 	SET_TARGET_PROPERTIES(freeglut_static PROPERTIES OUTPUT_NAME glut)
-	TARGET_LINK_LIBRARIES(freeglut ${LIBS})
 ENDIF()
+TARGET_LINK_LIBRARIES(freeglut ${LIBS})
+TARGET_LINK_LIBRARIES(freeglut_static ${LIBS})
 
 IF(BUILD_SHARED_LIBS)
 	INSTALL(TARGETS freeglut DESTINATION lib)
@@ -166,7 +173,8 @@ INSTALL(FILES ${FREEGLUT_HEADERS} DESTINATION include/GL)
 # Optionally build demos, on by default.
 option( FREEGLUT_BUILD_DEMOS "Build FreeGLUT demos." ON )
 
-SET(DEMO_LIBS ${OPENGL_LIBRARY} ${LIBS})
+SET(DEMO_LIBS ${LIBS} m)
+
 MACRO(ADD_DEMO name)
 	if( FREEGLUT_BUILD_DEMOS )
 		ADD_EXECUTABLE(${name} ${ARGN})
@@ -190,5 +198,3 @@ ADD_DEMO(spaceball       progs/demos/spaceball/spaceball.c
                          progs/demos/spaceball/vmath.c
                          progs/demos/spaceball/vmath.h)
 ADD_DEMO(subwin          progs/demos/subwin/subwin.c)
-
-
