@@ -44,6 +44,7 @@ lib@LIBRARY@_la_SOURCES = \
 if TARGET_HOST_MS_WINDOWS
 lib@LIBRARY@_la_SOURCES += \
 	Common/xparsegeometry_repl.c \
+	Common/xparsegeometry_repl.h \
 	mswin/freeglut_cursor_mswin.c \
 	mswin/freeglut_display_mswin.c \
 	mswin/freeglut_ext_mswin.c \
@@ -91,6 +92,7 @@ endif
 if TARGET_HOST_ANDROID
 lib@LIBRARY@_la_SOURCES += \
 	Common/xparsegeometry_repl.c \
+	Common/xparsegeometry_repl.h \
 	egl/freeglut_internal_egl.h \
 	egl/freeglut_display_egl.c \
 	egl/freeglut_init_egl.c \
