@@ -313,8 +313,11 @@ void fgDeinitialize( void )
     fgState.Initialised = GL_FALSE;
 }
 
-
 /* -- INTERFACE FUNCTIONS -------------------------------------------------- */
+
+#if !TARGET_HOST_POSIX_X11
+#include "Common/xparsegeometry_repl.h"
+#endif
 
 /*
  * Perform initialization. This usually happens on the program startup
