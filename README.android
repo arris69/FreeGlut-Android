@@ -1,5 +1,3 @@
-TODO: update me for CMake
-
 Create a module compatible with the NDK build-system
 ====================================================
 
@@ -18,6 +16,18 @@ Create a module compatible with the NDK build-system
   make
   (cd src/ && make install DESTDIR=$(pwd))
   (cd include/ && make install DESTDIR=$(pwd))
+
+  with CMake:
+
+  PATH=/usr/src/ndk-standalone-9/bin:$PATH
+  cd /usr/src/freeglut-3.0.0/
+  cmake \
+    -D CMAKE_TOOLCHAIN_FILE=android_toolchain.cmake \
+    -D CMAKE_INSTALL_PREFIX=/freeglut \
+    -D FREEGLUT_BUILD_DEMOS=NO \
+    .
+  make -j4
+  make install DESTDIR=$(pwd)
 
 - Copy Android.mk in the new 'freeglut/' directory :
 

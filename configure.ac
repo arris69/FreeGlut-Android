@@ -56,6 +56,10 @@ case "${host}" in
 	LIBXXF86VM=
 	LIBXI=
 	#CFLAGS="$CFLAGS"
+	# '-mandroid' is not mandatory but doesn't hurt
+	# '-O0 -gstabs+' helps the currently buggy GDB port, better
+	#   remove it for releases
+	# '-DANDROID' is the Android build system convention
 	CFLAGS="-mandroid -O0 -gstabs+"
 	CPPFLAGS="$CPPFLAGS -DANDROID"
 	AM_CONDITIONAL(TARGET_HOST_ANDROID, true)

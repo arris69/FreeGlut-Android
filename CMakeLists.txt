@@ -9,20 +9,18 @@ SET(FREEGLUT_HEADERS
 )
 SET(FREEGLUT_SRCS
 	${FREEGLUT_HEADERS}
+
 	src/Common/freeglut_callbacks.c
 	src/Common/freeglut_cursor.c
 	src/Common/freeglut_display.c
 	src/Common/freeglut_ext.c
-	src/Common/freeglut_font.c
 	src/Common/freeglut_font_data.c
 	src/Common/freeglut_gamemode.c
-	src/Common/freeglut_geometry.c
 	src/Common/freeglut_init.c
 	src/Common/freeglut_internal.h
 	src/Common/freeglut_input_devices.c
 	src/Common/freeglut_joystick.c
 	src/Common/freeglut_main.c
-	src/Common/freeglut_menu.c
 	src/Common/freeglut_misc.c
 	src/Common/freeglut_overlay.c
 	src/Common/freeglut_spaceball.c
@@ -30,13 +28,24 @@ SET(FREEGLUT_SRCS
 	src/Common/freeglut_stroke_mono_roman.c
 	src/Common/freeglut_stroke_roman.c
 	src/Common/freeglut_structure.c
-	src/Common/freeglut_teapot.c
 	src/Common/freeglut_videoresize.c
 	src/Common/freeglut_window.c
 )
+# Android port requires adding a version of these compatible with
+# OpenGL ES (TODO):
+IF(NOT ANDROID)
+	LIST(APPEND FREEGLUT_SRCS
+		src/Common/freeglut_font.c
+		src/Common/freeglut_geometry.c
+		src/Common/freeglut_menu.c
+		src/Common/freeglut_teapot.c
+)
+ENDIF()
 
 IF(WIN32)
 	LIST(APPEND FREEGLUT_SRCS
+		src/Common/xparsegeometry_repl.c
+		src/Common/xparsegeometry_repl.h
 		src/mswin/freeglut_cursor_mswin.c
 		src/mswin/freeglut_display_mswin.c
 		src/mswin/freeglut_ext_mswin.c
@@ -51,6 +60,28 @@ IF(WIN32)
 		src/mswin/freeglut_state_mswin.c
 		src/mswin/freeglut_structure_mswin.c
 		src/mswin/freeglut_window_mswin.c
+)
+ELSEIF(ANDROID)
+	LIST(APPEND FREEGLUT_SRCS
+		src/Common/xparsegeometry_repl.c
+		src/Common/xparsegeometry_repl.h
+		src/egl/freeglut_internal_egl.h
+		src/egl/freeglut_display_egl.c
+		src/egl/freeglut_init_egl.c
+		src/egl/freeglut_structure_egl.c
+		src/egl/freeglut_window_egl.c
+		src/android/native_app_glue/android_native_app_glue.c
+		src/android/native_app_glue/android_native_app_glue.h
+		src/android/freeglut_runtime_android.c
+		src/android/freeglut_gamemode_android.c
+		src/android/freeglut_input_devices_android.c
+		src/android/freeglut_joystick_android.c
+		src/android/freeglut_main_android.c
+		src/android/freeglut_spaceball_android.c
+		src/android/freeglut_state_android.c
+		src/android/freeglut_window_android.c
+		src/android/opengles_stubs.c
+		src/android/freeglut_internal_android.h
 )
 ELSE()
 	LIST(APPEND FREEGLUT_SRCS
@@ -84,17 +115,30 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 OPTION(BUILD_SHARED_LIBS "Build FreeGLUT shared library." ON)
 OPTION(BUILD_STATIC_LIBS "Build FreeGLUT static library." ON)
 
-FIND_PACKAGE(OpenGL REQUIRED)
-LIST(APPEND LIBS ${OPENGL_LIBRARY})
+SET(BUILD_OPENGL "OPENGL")
+IF(ANDROID)
+  # SET(BUILD_OPENGL "GLESv1")
+  SET(BUILD_OPENGL "GLESv2")
+ENDIF()
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include ${OPENGL_INCLUDE_DIR})
+IF(BUILD_OPENGL STREQUAL "OPENGL")
+  FIND_PACKAGE(OpenGL REQUIRED)
+  LIST(APPEND LIBS ${OPENGL_LIBRARY})
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include ${OPENGL_INCLUDE_DIR})
+ELSEIF(BUILD_OPENGL STREQUAL "GLESv1")
+  ADD_DEFINITIONS(-DGLESv1)
+  LIST(APPEND LIBS "GLESv1")
+ELSEIF(BUILD_OPENGL STREQUAL "GLESv2")
+  ADD_DEFINITIONS(-DGLESv2)
+  LIST(APPEND LIBS "GLESv2")
+ENDIF()
 
 IF(WIN32)
 	MESSAGE(WARNING "Insecure CRT warnings hidden (might want to fix these)")
 	ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 ENDIF()
 
-if(UNIX)
+if(UNIX AND NOT ANDROID)
 	FIND_PACKAGE(X11 REQUIRED)
 	LIST(APPEND LIBS ${X11_LIBRARIES})
 	IF(X11_Xrandr_FOUND)
@@ -128,7 +172,7 @@ CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
 # ensure that all CMake-generated files are kept away from the main source tree.
 # As a result, the build directory must to be added to the include path list.
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_BINARY_DIR}/config.h)
-INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src)
 ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 
 # by default, at least on UNIX, we want to build both
@@ -158,6 +202,19 @@ ELSE()
 	#   on Xrandr or Xxf86vm)
 	SET_TARGET_PROPERTIES(freeglut PROPERTIES VERSION 3.9.0 SOVERSION 3 OUTPUT_NAME glut)
 	SET_TARGET_PROPERTIES(freeglut_static PROPERTIES OUTPUT_NAME glut)
+	IF(ANDROID)
+		# Not in CMake toolchain file, because the toolchain
+		# file is called several times and generally doesn't
+		# seem to be meant for it:
+		# '-mandroid' is not mandatory but doesn't hurt
+		# '-O0 -gstabs+' helps the currently buggy GDB port
+		# '-DANDROID' is the Android build system convention
+		# Too late to manipulate ENV: SET(ENV{CFLAGS} "$ENV{CFLAGS} -mandroid")
+		# Not using _INIT variables, they seem to be used internally only
+		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mandroid")
+		SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -gstabs+")
+		ADD_DEFINITIONS(-DANDROID)
+	ENDIF()
 ENDIF()
 TARGET_LINK_LIBRARIES(freeglut ${LIBS})
 TARGET_LINK_LIBRARIES(freeglut_static ${LIBS})
@@ -200,3 +257,4 @@ ADD_DEMO(spaceball       progs/demos/spaceball/spaceball.c
                          progs/demos/spaceball/vmath.c
                          progs/demos/spaceball/vmath.h)
 ADD_DEMO(subwin          progs/demos/subwin/subwin.c)
+#include(CMakePrintSystemInformation)
