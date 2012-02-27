@@ -15,11 +15,6 @@ EXTRA_DIST = Common/freeglutdll.def
 #
 # Those source files build the freeglut library
 #
-# TODO: uses OpenGL non-ES functions:
-#			 Common/freeglut_font.c
-#			 Common/freeglut_geometry.c
-#			 Common/freeglut_menu.c
-#			 Common/freeglut_teapot.c
 lib@LIBRARY@_la_SOURCES = \
 	Common/freeglut_callbacks.c \
 	Common/freeglut_cursor.c \
@@ -41,6 +36,15 @@ lib@LIBRARY@_la_SOURCES = \
 	Common/freeglut_videoresize.c \
 	Common/freeglut_window.c
 
+# TODO: uses OpenGL non-ES functions:
+if !TARGET_HOST_ANDROID
+lib@LIBRARY@_la_SOURCES += \
+	Common/freeglut_font.c \
+	Common/freeglut_geometry.c \
+	Common/freeglut_menu.c \
+	Common/freeglut_teapot.c
+endif
+
 if TARGET_HOST_MS_WINDOWS
 lib@LIBRARY@_la_SOURCES += \
 	Common/xparsegeometry_repl.c \
@@ -58,11 +62,7 @@ lib@LIBRARY@_la_SOURCES += \
 	mswin/freeglut_spaceball_mswin.c \
 	mswin/freeglut_state_mswin.c \
 	mswin/freeglut_structure_mswin.c \
-	mswin/freeglut_window_mswin.c \
-	Common/freeglut_font.c \
-	Common/freeglut_geometry.c \
-	Common/freeglut_menu.c \
-	Common/freeglut_teapot.c
+	mswin/freeglut_window_mswin.c
 endif
 
 if TARGET_HOST_POSIX_X11
@@ -82,11 +82,7 @@ lib@LIBRARY@_la_SOURCES += \
 	x11/freeglut_state_x11.c \
 	x11/freeglut_structure_x11.c \
 	x11/freeglut_window_x11.c \
-	x11/freeglut_xinput_x11.c \
-	Common/freeglut_font.c \
-	Common/freeglut_geometry.c \
-	Common/freeglut_menu.c \
-	Common/freeglut_teapot.c
+	x11/freeglut_xinput_x11.c
 endif
 
 if TARGET_HOST_ANDROID
