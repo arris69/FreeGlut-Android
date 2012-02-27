@@ -42,9 +42,11 @@ With CMake
 
 Cross-compile with:
 
-  cmake -D GNU_HOST=$GNU_HOST \
+  cmake \
+    -D GNU_HOST=$GNU_HOST \
     -D CMAKE_TOOLCHAIN_FILE=mingw_cross_toolchain.cmake \
-    -D CMAKE_INSTALL_PREFIX=/freeglut .
+    -D CMAKE_INSTALL_PREFIX=/freeglut \
+    .
   make -j4
   make install DESTDIR=$(pwd)
 
