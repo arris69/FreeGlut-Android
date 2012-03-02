@@ -33,7 +33,32 @@
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "FreeGLUT", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "FreeGLUT", __VA_ARGS__))
 #include <android/native_app_glue/android_native_app_glue.h>
- 
+#include <android/keycodes.h>
+
+/* Cf. http://developer.android.com/reference/android/view/KeyEvent.html */
+/* These codes are missing in <android/keycodes.h> */
+/* Don't convert to enum, since it may conflict with future version of
+   that <android/keycodes.h> */
+#define AKEYCODE_FORWARD_DEL 112
+#define AKEYCODE_CTRL_LEFT 113
+#define AKEYCODE_CTRL_RIGHT 114
+#define AKEYCODE_MOVE_HOME 122
+#define AKEYCODE_MOVE_END 123
+#define AKEYCODE_INSERT 124
+#define AKEYCODE_ESCAPE 127
+#define AKEYCODE_F1 131
+#define AKEYCODE_F2 132
+#define AKEYCODE_F3 133
+#define AKEYCODE_F4 134
+#define AKEYCODE_F5 135
+#define AKEYCODE_F6 136
+#define AKEYCODE_F7 137
+#define AKEYCODE_F8 138
+#define AKEYCODE_F9 139
+#define AKEYCODE_F10 140
+#define AKEYCODE_F11 141
+#define AKEYCODE_F12 142
+
 /*
  * Handle a window configuration change. When no reshape
  * callback is hooked, the viewport size is updated to
@@ -72,6 +97,90 @@ void fgPlatformSleepForEvents( long msec )
  * Process the next input event.
  */
 int32_t handle_input(struct android_app* app, AInputEvent* event) {
+  SFG_Window* window = fgDisplay.pDisplay.single_window;
+
+  int32_t keypress = -1;
+
+  if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_KEY) {
+    // Note: Android generates repeat events when key is left
+    // pressed - just what like GLUT expects
+    int32_t keyboard_metastate = AKeyEvent_getMetaState(event);
+
+    if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN) {
+      int32_t code = AKeyEvent_getKeyCode(event);
+
+      switch (code) {
+      case AKEYCODE_F1:  keypress = GLUT_KEY_F1;  break;
+      case AKEYCODE_F2:  keypress = GLUT_KEY_F2;  break;
+      case AKEYCODE_F3:  keypress = GLUT_KEY_F3;  break;
+      case AKEYCODE_F4:  keypress = GLUT_KEY_F4;  break;
+      case AKEYCODE_F5:  keypress = GLUT_KEY_F5;  break;
+      case AKEYCODE_F6:  keypress = GLUT_KEY_F6;  break;
+      case AKEYCODE_F7:  keypress = GLUT_KEY_F7;  break;
+      case AKEYCODE_F8:  keypress = GLUT_KEY_F8;  break;
+      case AKEYCODE_F9:  keypress = GLUT_KEY_F9;  break;
+      case AKEYCODE_F10: keypress = GLUT_KEY_F10; break;
+      case AKEYCODE_F11: keypress = GLUT_KEY_F11; break;
+      case AKEYCODE_F12: keypress = GLUT_KEY_F12; break;
+
+      case AKEYCODE_PAGE_UP:   keypress = GLUT_KEY_PAGE_UP;   break;
+      case AKEYCODE_PAGE_DOWN: keypress = GLUT_KEY_PAGE_DOWN; break;
+      case AKEYCODE_MOVE_HOME: keypress = GLUT_KEY_HOME;      break;
+      case AKEYCODE_MOVE_END:  keypress = GLUT_KEY_END;       break;
+      case AKEYCODE_INSERT:    keypress = GLUT_KEY_INSERT;    break;
+
+      case AKEYCODE_DPAD_UP:    keypress = GLUT_KEY_UP;    break;
+      case AKEYCODE_DPAD_DOWN:  keypress = GLUT_KEY_DOWN;  break;
+      case AKEYCODE_DPAD_LEFT:  keypress = GLUT_KEY_LEFT;  break;
+      case AKEYCODE_DPAD_RIGHT: keypress = GLUT_KEY_RIGHT; break;
+
+      case AKEYCODE_ALT_LEFT:    keypress = GLUT_KEY_ALT_L; break;
+      case AKEYCODE_ALT_RIGHT:   keypress = GLUT_KEY_ALT_R; break;
+      case AKEYCODE_SHIFT_LEFT:  keypress = GLUT_KEY_SHIFT_L; break;
+      case AKEYCODE_SHIFT_RIGHT: keypress = GLUT_KEY_SHIFT_R; break;
+      case AKEYCODE_CTRL_LEFT:   keypress = GLUT_KEY_CTRL_L; break;
+      case AKEYCODE_CTRL_RIGHT:  keypress = GLUT_KEY_SHIFT_R; break;
+
+      case AKEYCODE_DEL:
+	/* The backspace key should be treated as an ASCII keypress: */
+	/*
+	  INVOKE_WCB( *window, Keyboard,
+		    ( 8, window->State.MouseX, window->State.MouseY )
+		    );
+	*/
+	break;
+      case AKEYCODE_FORWARD_DEL:
+	/* The delete key should be treated as an ASCII keypress: */
+	/*
+	  INVOKE_WCB( *window, Keyboard,
+		    ( 127, window->State.MouseX, window->State.MouseY )
+		    );
+	*/
+	break;
+      case AKEYCODE_ESCAPE:
+	/* The escape key should be treated as an ASCII keypress: */
+	/*
+	  INVOKE_WCB( *window, Keyboard,
+		    ( 27, window->State.MouseX, window->State.MouseY )
+		    );
+	*/
+	break;
+
+      default:
+	/* Let the system handle other keyevent (in particular the
+	   Back button) */
+	break;
+      }
+
+      if (keypress != -1 && FETCH_WCB(*window, Special)) {
+	INVOKE_WCB( *window, Special,
+		    ( keypress,
+		      window->State.MouseX, window->State.MouseY )
+		    );
+	return 1;  /* handled */
+      }
+    }
+  }
   return 0;  /* not handled */
 }
 
