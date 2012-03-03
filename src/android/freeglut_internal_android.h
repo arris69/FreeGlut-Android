@@ -31,6 +31,21 @@
 /* Android OpenGL ES is accessed through EGL */
 #include "../egl/freeglut_internal_egl.h"
 
+/**
+ * Virtual PAD (spots on touchscreen that simulate keys)
+ */
+struct vpad_state {
+    bool on;
+    bool left;
+    bool right;
+    bool up;
+    bool down;
+};
+struct touchscreen {
+    struct vpad_state vpad;
+    bool in_mmotion;
+};
+
 
 /* -- JOYSTICK-SPECIFIC STRUCTURES AND TYPES ------------------------------- */
 /*

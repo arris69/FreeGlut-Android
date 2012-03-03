@@ -35,6 +35,9 @@
 #include <android/native_app_glue/android_native_app_glue.h>
 #include <android/keycodes.h>
 
+static struct touchscreen touchscreen;
+static unsigned char key_a2fg[256];
+
 /* Cf. http://developer.android.com/reference/android/view/KeyEvent.html */
 /* These codes are missing in <android/keycodes.h> */
 /* Don't convert to enum, since it may conflict with future version of
@@ -61,8 +64,6 @@
 
 #define EVENT_HANDLED 1
 #define EVENT_NOT_HANDLED 0
-
-static unsigned char key_a2fg[256];
 
 /**
  * Initialize Android keycode to GLUT keycode mapping
@@ -208,6 +209,85 @@ int32_t handle_input(struct android_app* app, AInputEvent* event) {
       }
     }
   }
+
+  if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
+    int32_t action = AMotionEvent_getAction(event);
+    float x = AMotionEvent_getX(event, 0);
+    float y = AMotionEvent_getY(event, 0);
+    LOGI("motion %.01f,%.01f action=%d", x, y, AMotionEvent_getAction(event));
+    
+    /* Virtual arrows PAD */
+    // Don't interfere with existing mouse move event
+    if (!touchscreen.in_mmotion) {
+      struct vpad_state prev_vpad = touchscreen.vpad;
+      touchscreen.vpad.left = touchscreen.vpad.right
+	= touchscreen.vpad.up = touchscreen.vpad.down = false;
+
+      int32_t width = ANativeWindow_getWidth(window->Window.Handle);
+      int32_t height = ANativeWindow_getHeight(window->Window.Handle);
+      if (action == AMOTION_EVENT_ACTION_DOWN || action == AMOTION_EVENT_ACTION_MOVE) {
+	if ((x > 0 && x < 100) && (y > (height - 100) && y < height))
+	  touchscreen.vpad.left = true;
+	if ((x > 200 && x < 300) && (y > (height - 100) && y < height))
+	  touchscreen.vpad.right = true;
+	if ((x > 100 && x < 200) && (y > (height - 100) && y < height))
+	  touchscreen.vpad.down = true;
+	if ((x > 100 && x < 200) && (y > (height - 200) && y < (height - 100)))
+	  touchscreen.vpad.up = true;
+      }
+      if (action == AMOTION_EVENT_ACTION_DOWN && 
+	  (touchscreen.vpad.left || touchscreen.vpad.right || touchscreen.vpad.down || touchscreen.vpad.up))
+	touchscreen.vpad.on = true;
+      if (action == AMOTION_EVENT_ACTION_UP)
+	touchscreen.vpad.on = false;
+      if (prev_vpad.left != touchscreen.vpad.left
+	  || prev_vpad.right != touchscreen.vpad.right
+	  || prev_vpad.up != touchscreen.vpad.up
+	  || prev_vpad.down != touchscreen.vpad.down
+	  || prev_vpad.on != touchscreen.vpad.on) {
+	if (FETCH_WCB(*window, Special)) {
+	  if (prev_vpad.left == false && touchscreen.vpad.left == true)
+	    INVOKE_WCB(*window, Special, (GLUT_KEY_LEFT, x, y));
+	  else if (prev_vpad.right == false && touchscreen.vpad.right == true)
+	    INVOKE_WCB(*window, Special, (GLUT_KEY_RIGHT, x, y));
+	  else if (prev_vpad.up == false && touchscreen.vpad.up == true)
+	    INVOKE_WCB(*window, Special, (GLUT_KEY_UP, x, y));
+	  else if (prev_vpad.down == false && touchscreen.vpad.down == true)
+	    INVOKE_WCB(*window, Special, (GLUT_KEY_DOWN, x, y));
+	}
+	if (FETCH_WCB(*window, SpecialUp)) {
+	  if (prev_vpad.left == true && touchscreen.vpad.left == false)
+	    INVOKE_WCB(*window, SpecialUp, (GLUT_KEY_LEFT, x, y));
+	  if (prev_vpad.right == true && touchscreen.vpad.right == false)
+	    INVOKE_WCB(*window, SpecialUp, (GLUT_KEY_RIGHT, x, y));
+	  if (prev_vpad.up == true && touchscreen.vpad.up == false)
+	    INVOKE_WCB(*window, SpecialUp, (GLUT_KEY_UP, x, y));
+	  if (prev_vpad.down == true && touchscreen.vpad.down == false)
+	    INVOKE_WCB(*window, SpecialUp, (GLUT_KEY_DOWN, x, y));
+	}
+	return EVENT_HANDLED;
+      }
+    }
+    
+    /* Normal mouse events */
+    if (!touchscreen.vpad.on) {
+      window->State.MouseX = x;
+      window->State.MouseY = y;
+      LOGI("Changed mouse position: %d,%d", x, y);
+      if (action == AMOTION_EVENT_ACTION_DOWN && FETCH_WCB(*window, Mouse)) {
+	touchscreen.in_mmotion = true;
+	INVOKE_WCB(*window, Mouse, (GLUT_LEFT_BUTTON, GLUT_DOWN, x, y));
+      } else if (action == AMOTION_EVENT_ACTION_UP && FETCH_WCB(*window, Mouse)) {
+	touchscreen.in_mmotion = false;
+	INVOKE_WCB(*window, Mouse, (GLUT_LEFT_BUTTON, GLUT_UP, x, y));
+      } else if (action == AMOTION_EVENT_ACTION_MOVE && FETCH_WCB(*window, Motion)) {
+	INVOKE_WCB(*window, Motion, (x, y));
+      }
+    }
+    
+    return EVENT_HANDLED;
+  }
+
   /* Let Android handle other events (e.g. Back and Menu buttons) */
   return EVENT_NOT_HANDLED;
 }
