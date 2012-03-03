@@ -59,6 +59,82 @@
 #define AKEYCODE_F11 141
 #define AKEYCODE_F12 142
 
+#define EVENT_HANDLED 1
+#define EVENT_NOT_HANDLED 0
+
+static unsigned char key_a2fg[256];
+
+/**
+ * Initialize Android keycode to GLUT keycode mapping
+ */
+static void key_init() {
+  memset(key_a2fg, 0, sizeof(key_a2fg));
+
+  key_a2fg[AKEYCODE_F1]  = GLUT_KEY_F1;
+  key_a2fg[AKEYCODE_F2]  = GLUT_KEY_F2;
+  key_a2fg[AKEYCODE_F3]  = GLUT_KEY_F3;
+  key_a2fg[AKEYCODE_F4]  = GLUT_KEY_F4;
+  key_a2fg[AKEYCODE_F5]  = GLUT_KEY_F5;
+  key_a2fg[AKEYCODE_F6]  = GLUT_KEY_F6;
+  key_a2fg[AKEYCODE_F7]  = GLUT_KEY_F7;
+  key_a2fg[AKEYCODE_F8]  = GLUT_KEY_F8;
+  key_a2fg[AKEYCODE_F9]  = GLUT_KEY_F9;
+  key_a2fg[AKEYCODE_F10] = GLUT_KEY_F10;
+  key_a2fg[AKEYCODE_F11] = GLUT_KEY_F11;
+  key_a2fg[AKEYCODE_F12] = GLUT_KEY_F12;
+
+  key_a2fg[AKEYCODE_PAGE_UP]   = GLUT_KEY_PAGE_UP;
+  key_a2fg[AKEYCODE_PAGE_DOWN] = GLUT_KEY_PAGE_DOWN;
+  key_a2fg[AKEYCODE_MOVE_HOME] = GLUT_KEY_HOME;
+  key_a2fg[AKEYCODE_MOVE_END]  = GLUT_KEY_END;
+  key_a2fg[AKEYCODE_INSERT]    = GLUT_KEY_INSERT;
+
+  key_a2fg[AKEYCODE_DPAD_UP]    = GLUT_KEY_UP;
+  key_a2fg[AKEYCODE_DPAD_DOWN]  = GLUT_KEY_DOWN;
+  key_a2fg[AKEYCODE_DPAD_LEFT]  = GLUT_KEY_LEFT;
+  key_a2fg[AKEYCODE_DPAD_RIGHT] = GLUT_KEY_RIGHT;
+
+  key_a2fg[AKEYCODE_ALT_LEFT]    = GLUT_KEY_ALT_L;
+  key_a2fg[AKEYCODE_ALT_RIGHT]   = GLUT_KEY_ALT_R;
+  key_a2fg[AKEYCODE_SHIFT_LEFT]  = GLUT_KEY_SHIFT_L;
+  key_a2fg[AKEYCODE_SHIFT_RIGHT] = GLUT_KEY_SHIFT_R;
+  key_a2fg[AKEYCODE_CTRL_LEFT]   = GLUT_KEY_CTRL_L;
+  key_a2fg[AKEYCODE_CTRL_RIGHT]  = GLUT_KEY_CTRL_R;
+}
+
+/**
+ * Convert an Android key event to ASCII.
+ */
+static unsigned char key_ascii(struct android_app* app, AInputEvent* event) {
+  int32_t code = AKeyEvent_getKeyCode(event);
+
+  /* Handle a few special cases: */
+  switch (code) {
+  case AKEYCODE_DEL:
+    return 8;
+  case AKEYCODE_FORWARD_DEL:
+    return 127;
+  case AKEYCODE_ESCAPE:
+    return 27;
+  }
+
+  /* Get usable JNI context */
+  JNIEnv* env = app->activity->env;
+  JavaVM* vm = app->activity->vm;
+  (*vm)->AttachCurrentThread(vm, &env, NULL);
+
+  jclass KeyEventClass = (*env)->FindClass(env, "android/view/KeyEvent");
+  jmethodID KeyEventConstructor = (*env)->GetMethodID(env, KeyEventClass, "<init>", "(II)V");
+  jobject keyEvent = (*env)->NewObject(env, KeyEventClass, KeyEventConstructor,
+				       AKeyEvent_getAction(event), AKeyEvent_getKeyCode(event));
+  jmethodID KeyEvent_getUnicodeChar = (*env)->GetMethodID(env, KeyEventClass, "getUnicodeChar", "(I)I");
+  int ascii = (*env)->CallIntMethod(env, keyEvent, KeyEvent_getUnicodeChar, AKeyEvent_getMetaState(event));
+
+  /* LOGI("getUnicodeChar(%d) = %d ('%c')", AKeyEvent_getKeyCode(event), ascii, ascii); */
+
+  return ascii;
+}
+
 /*
  * Handle a window configuration change. When no reshape
  * callback is hooked, the viewport size is updated to
@@ -97,91 +173,43 @@ void fgPlatformSleepForEvents( long msec )
  * Process the next input event.
  */
 int32_t handle_input(struct android_app* app, AInputEvent* event) {
-  SFG_Window* window = fgDisplay.pDisplay.single_window;
+  SFG_Window* window = fgStructure.CurrentWindow;
 
-  int32_t keypress = -1;
-
+  /* FIXME: in Android, when key is repeated, down and up events
+     happen most often at the exact same time.  This makes it
+     impossible to animate based on key press time. */
+  /* e.g. down/up/wait/down/up rather than down/wait/down/wait/up */
+  
   if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_KEY) {
-    // Note: Android generates repeat events when key is left
-    // pressed - just what like GLUT expects
-    int32_t keyboard_metastate = AKeyEvent_getMetaState(event);
+    /* LOGI("action: %d", AKeyEvent_getAction(event)); */
+    /* LOGI("keycode: %d", code); */
+    int32_t code = AKeyEvent_getKeyCode(event);
 
     if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN) {
-      int32_t code = AKeyEvent_getKeyCode(event);
-
-      switch (code) {
-      case AKEYCODE_F1:  keypress = GLUT_KEY_F1;  break;
-      case AKEYCODE_F2:  keypress = GLUT_KEY_F2;  break;
-      case AKEYCODE_F3:  keypress = GLUT_KEY_F3;  break;
-      case AKEYCODE_F4:  keypress = GLUT_KEY_F4;  break;
-      case AKEYCODE_F5:  keypress = GLUT_KEY_F5;  break;
-      case AKEYCODE_F6:  keypress = GLUT_KEY_F6;  break;
-      case AKEYCODE_F7:  keypress = GLUT_KEY_F7;  break;
-      case AKEYCODE_F8:  keypress = GLUT_KEY_F8;  break;
-      case AKEYCODE_F9:  keypress = GLUT_KEY_F9;  break;
-      case AKEYCODE_F10: keypress = GLUT_KEY_F10; break;
-      case AKEYCODE_F11: keypress = GLUT_KEY_F11; break;
-      case AKEYCODE_F12: keypress = GLUT_KEY_F12; break;
-
-      case AKEYCODE_PAGE_UP:   keypress = GLUT_KEY_PAGE_UP;   break;
-      case AKEYCODE_PAGE_DOWN: keypress = GLUT_KEY_PAGE_DOWN; break;
-      case AKEYCODE_MOVE_HOME: keypress = GLUT_KEY_HOME;      break;
-      case AKEYCODE_MOVE_END:  keypress = GLUT_KEY_END;       break;
-      case AKEYCODE_INSERT:    keypress = GLUT_KEY_INSERT;    break;
-
-      case AKEYCODE_DPAD_UP:    keypress = GLUT_KEY_UP;    break;
-      case AKEYCODE_DPAD_DOWN:  keypress = GLUT_KEY_DOWN;  break;
-      case AKEYCODE_DPAD_LEFT:  keypress = GLUT_KEY_LEFT;  break;
-      case AKEYCODE_DPAD_RIGHT: keypress = GLUT_KEY_RIGHT; break;
-
-      case AKEYCODE_ALT_LEFT:    keypress = GLUT_KEY_ALT_L; break;
-      case AKEYCODE_ALT_RIGHT:   keypress = GLUT_KEY_ALT_R; break;
-      case AKEYCODE_SHIFT_LEFT:  keypress = GLUT_KEY_SHIFT_L; break;
-      case AKEYCODE_SHIFT_RIGHT: keypress = GLUT_KEY_SHIFT_R; break;
-      case AKEYCODE_CTRL_LEFT:   keypress = GLUT_KEY_CTRL_L; break;
-      case AKEYCODE_CTRL_RIGHT:  keypress = GLUT_KEY_SHIFT_R; break;
-
-      case AKEYCODE_DEL:
-	/* The backspace key should be treated as an ASCII keypress: */
-	/*
-	  INVOKE_WCB( *window, Keyboard,
-		    ( 8, window->State.MouseX, window->State.MouseY )
-		    );
-	*/
-	break;
-      case AKEYCODE_FORWARD_DEL:
-	/* The delete key should be treated as an ASCII keypress: */
-	/*
-	  INVOKE_WCB( *window, Keyboard,
-		    ( 127, window->State.MouseX, window->State.MouseY )
-		    );
-	*/
-	break;
-      case AKEYCODE_ESCAPE:
-	/* The escape key should be treated as an ASCII keypress: */
-	/*
-	  INVOKE_WCB( *window, Keyboard,
-		    ( 27, window->State.MouseX, window->State.MouseY )
-		    );
-	*/
-	break;
-
-      default:
-	/* Let the system handle other keyevent (in particular the
-	   Back button) */
-	break;
+      int32_t keypress = 0;
+      unsigned char ascii = 0;
+      if ((keypress = key_a2fg[code]) && FETCH_WCB(*window, Special)) {
+	INVOKE_WCB(*window, Special, (keypress, window->State.MouseX, window->State.MouseY));
+	return EVENT_HANDLED;
+      } else if ((ascii = key_ascii(app, event)) && FETCH_WCB(*window, Keyboard)) {
+	INVOKE_WCB(*window, Keyboard, (ascii, window->State.MouseX, window->State.MouseY));
+	return EVENT_HANDLED;
       }
-
-      if (keypress != -1 && FETCH_WCB(*window, Special)) {
-	INVOKE_WCB( *window, Special,
-		    ( keypress,
-		      window->State.MouseX, window->State.MouseY )
-		    );
-	return 1;  /* handled */
+    }
+    else if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_UP) {
+      int32_t keypress = 0;
+      unsigned char ascii = 0;
+      if ((keypress = key_a2fg[code]) && FETCH_WCB(*window, Special)) {
+	INVOKE_WCB(*window, SpecialUp, (keypress, window->State.MouseX, window->State.MouseY));
+	return EVENT_HANDLED;
+      } else if ((ascii = key_ascii(app, event)) && FETCH_WCB(*window, Keyboard)) {
+	INVOKE_WCB(*window, KeyboardUp, (ascii, window->State.MouseX, window->State.MouseY));
+	return EVENT_HANDLED;
       }
     }
   }
-  return 0;  /* not handled */
+  /* Let Android handle other events (e.g. Back and Menu buttons) */
+  return EVENT_NOT_HANDLED;
 }
 
 /**
@@ -281,6 +309,8 @@ void fgPlatformProcessSingleEvent ( void )
 void fgPlatformMainLoopPreliminaryWork ( void )
 {
   printf("fgPlatformMainLoopPreliminaryWork\n");
+
+  key_init();
 
   /* Make sure glue isn't stripped. */
   /* JNI entry points need to be bundled even when linking statically */
