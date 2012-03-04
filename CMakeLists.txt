@@ -34,12 +34,12 @@ SET(FREEGLUT_SRCS
 # Android port requires adding a version of these compatible with
 # OpenGL ES (TODO):
 IF(NOT ANDROID)
-	LIST(APPEND FREEGLUT_SRCS
-		src/Common/freeglut_font.c
-		src/Common/freeglut_geometry.c
-		src/Common/freeglut_menu.c
-		src/Common/freeglut_teapot.c
-)
+#	LIST(APPEND FREEGLUT_SRCS
+#		src/Common/freeglut_font.c
+#		src/Common/freeglut_geometry.c
+#		src/Common/freeglut_menu.c
+#		src/Common/freeglut_teapot.c
+#)
 ENDIF()
 
 IF(WIN32)
@@ -101,6 +101,7 @@ ELSE()
 		src/x11/freeglut_structure_x11.c
 		src/x11/freeglut_window_x11.c
 		src/x11/freeglut_xinput_x11.c
+		src/android/opengles_stubs.c
 )
 
 
@@ -115,7 +116,7 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 OPTION(BUILD_SHARED_LIBS "Build FreeGLUT shared library." ON)
 OPTION(BUILD_STATIC_LIBS "Build FreeGLUT static library." ON)
 
-SET(BUILD_OPENGL "OPENGL")
+SET(BUILD_OPENGL "GLESv2")
 IF(ANDROID)
   # SET(BUILD_OPENGL "GLESv1")
   SET(BUILD_OPENGL "GLESv2")

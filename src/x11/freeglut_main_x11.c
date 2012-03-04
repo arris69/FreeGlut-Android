@@ -781,7 +781,7 @@ void fgPlatformProcessSingleEvent ( void )
             GETMOUSE( xcrossing );
             if( ( event.type == LeaveNotify ) && window->IsMenu &&
                 window->ActiveMenu && window->ActiveMenu->IsActive )
-                fgUpdateMenuHighlight( window->ActiveMenu );
+                /* fgUpdateMenuHighlight( window->ActiveMenu ); */
 
             INVOKE_WCB( *window, Entry, ( ( EnterNotify == event.type ) ?
                                           GLUT_ENTERED :
@@ -803,7 +803,7 @@ void fgPlatformProcessSingleEvent ( void )
                         event.xmotion.y_root - window->ActiveMenu->Y;
                 }
 
-                fgUpdateMenuHighlight( window->ActiveMenu );
+                /* fgUpdateMenuHighlight( window->ActiveMenu ); */
 
                 break;
             }
@@ -856,9 +856,9 @@ void fgPlatformProcessSingleEvent ( void )
              * is hooked to this button.  In that case an appropriate
              * private call should be generated.
              */
-            if( fgCheckActiveMenu( window, button, pressed,
-                                   event.xbutton.x_root, event.xbutton.y_root ) )
-                break;
+            /* if( fgCheckActiveMenu( window, button, pressed, */
+            /*                        event.xbutton.x_root, event.xbutton.y_root ) ) */
+            /*     break; */
 
             /*
              * Check if there is a mouse or mouse wheel callback hooked to the

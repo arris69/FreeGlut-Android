@@ -86,83 +86,94 @@
  * Chooses a visual basing on the current display mode settings
  */
 
-GLXFBConfig* fgPlatformChooseFBConfig( int *numcfgs )
+EGLConfig* fgPlatformChooseFBConfig( int *numcfgs )
 {
   GLboolean wantIndexedMode = GL_FALSE;
   int attributes[ 100 ];
   int where = 0, numAuxBuffers;
 
   /* First we have to process the display mode settings... */
-  if( fgState.DisplayMode & GLUT_INDEX ) {
-    ATTRIB_VAL( GLX_BUFFER_SIZE, 8 );
-    /*  Buffer size is selected later.  */
+  /* if( fgState.DisplayMode & GLUT_INDEX ) { */
+  /*   ATTRIB_VAL( EGL_BUFFER_SIZE, 8 ); */
+  /*   /\*  Buffer size is selected later.  *\/ */
 
-    ATTRIB_VAL( GLX_RENDER_TYPE, GLX_COLOR_INDEX_BIT );
-    wantIndexedMode = GL_TRUE;
-  } else {
-    ATTRIB_VAL( GLX_RED_SIZE,   1 );
-    ATTRIB_VAL( GLX_GREEN_SIZE, 1 );
-    ATTRIB_VAL( GLX_BLUE_SIZE,  1 );
-    if( fgState.DisplayMode & GLUT_ALPHA ) {
-      ATTRIB_VAL( GLX_ALPHA_SIZE, 1 );
-    }
+  /*   ATTRIB_VAL( GLX_RENDER_TYPE, GLX_COLOR_INDEX_BIT ); */
+  /*   wantIndexedMode = GL_TRUE; */
+  /* } else */ {
+    ATTRIB_VAL( EGL_RED_SIZE,   1 );
+    ATTRIB_VAL( EGL_GREEN_SIZE, 1 );
+    ATTRIB_VAL( EGL_BLUE_SIZE,  1 );
+    if( fgState.DisplayMode & GLUT_ALPHA )
+      ATTRIB_VAL( EGL_ALPHA_SIZE, 1 );
   }
 
-  if( fgState.DisplayMode & GLUT_DOUBLE ) {
-    ATTRIB_VAL( GLX_DOUBLEBUFFER, True );
-  }
+  /* if( fgState.DisplayMode & GLUT_DOUBLE ) { */
+  /*   ATTRIB_VAL( GLX_DOUBLEBUFFER, True ); */
+  /* } */
 
-  if( fgState.DisplayMode & GLUT_STEREO ) {
-    ATTRIB_VAL( GLX_STEREO, True );
-  }
+  /* if( fgState.DisplayMode & GLUT_STEREO ) { */
+  /*   ATTRIB_VAL( GLX_STEREO, True ); */
+  /* } */
 
   if( fgState.DisplayMode & GLUT_DEPTH ) {
-    ATTRIB_VAL( GLX_DEPTH_SIZE, 1 );
+    ATTRIB_VAL( EGL_DEPTH_SIZE, 1 );
   }
 
   if( fgState.DisplayMode & GLUT_STENCIL ) {
-    ATTRIB_VAL( GLX_STENCIL_SIZE, 1 );
+    ATTRIB_VAL( EGL_STENCIL_SIZE, 1 );
   }
 
-  if( fgState.DisplayMode & GLUT_ACCUM ) {
-    ATTRIB_VAL( GLX_ACCUM_RED_SIZE, 1 );
-    ATTRIB_VAL( GLX_ACCUM_GREEN_SIZE, 1 );
-    ATTRIB_VAL( GLX_ACCUM_BLUE_SIZE, 1 );
-    if( fgState.DisplayMode & GLUT_ALPHA ) {
-      ATTRIB_VAL( GLX_ACCUM_ALPHA_SIZE, 1 );
-    }
-  }
+  /* if( fgState.DisplayMode & GLUT_ACCUM ) { */
+  /*   ATTRIB_VAL( GLX_ACCUM_RED_SIZE, 1 ); */
+  /*   ATTRIB_VAL( GLX_ACCUM_GREEN_SIZE, 1 ); */
+  /*   ATTRIB_VAL( GLX_ACCUM_BLUE_SIZE, 1 ); */
+  /*   if( fgState.DisplayMode & GLUT_ALPHA ) { */
+  /*     ATTRIB_VAL( GLX_ACCUM_ALPHA_SIZE, 1 ); */
+  /*   } */
+  /* } */
 
-  numAuxBuffers = fghNumberOfAuxBuffersRequested();
-  if ( numAuxBuffers > 0 ) {
-    ATTRIB_VAL( GLX_AUX_BUFFERS, numAuxBuffers );
-  }
+  /* numAuxBuffers = fghNumberOfAuxBuffersRequested(); */
+  /* if ( numAuxBuffers > 0 ) { */
+  /*   ATTRIB_VAL( GLX_AUX_BUFFERS, numAuxBuffers ); */
+  /* } */
 
-  if( fgState.DisplayMode & GLUT_SRGB ) {
-    ATTRIB_VAL( GLX_FRAMEBUFFER_SRGB_CAPABLE_ARB, True );
-  }
+  /* if( fgState.DisplayMode & GLUT_SRGB ) { */
+  /*   ATTRIB_VAL( GLX_FRAMEBUFFER_SRGB_CAPABLE_ARB, True ); */
+  /* } */
 
   if (fgState.DisplayMode & GLUT_MULTISAMPLE) {
-    ATTRIB_VAL(GLX_SAMPLE_BUFFERS, 1);
-    ATTRIB_VAL(GLX_SAMPLES, fgState.SampleNumber);
+    ATTRIB_VAL(EGL_SAMPLE_BUFFERS, 1);
+    ATTRIB_VAL(EGL_SAMPLES, fgState.SampleNumber);
   }
 
+  ATTRIB_VAL(EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT);
+
   /* Push a terminator at the end of the list */
-  ATTRIB( None );
+  ATTRIB( EGL_NONE );
 
     {
-        GLXFBConfig * fbconfigArray;  /*  Array of FBConfigs  */
-        GLXFBConfig * fbconfig;       /*  The FBConfig we want  */
-        int fbconfigArraySize;        /*  Number of FBConfigs in the array  */
+        EGLConfig * fbconfigArray;  /*  Array of FBConfigs  */
+        EGLConfig * fbconfig;       /*  The FBConfig we want  */
+        EGLint fbconfigArraySize = 0;        /*  Number of FBConfigs in the array  */
 
+	/* Get number of available configs */
+	if (!eglChooseConfig(fgDisplay.pDisplay.eglDisplay,
+			     attributes, NULL, 10,
+			     &fbconfigArraySize ))
+	  printf("eglChooseConfig: %x\n", eglGetError());
+	fbconfigArray = calloc(fbconfigArraySize, sizeof(EGLConfig));
 
         /*  Get all FBConfigs that match "attributes".  */
-        fbconfigArray = glXChooseFBConfig( fgDisplay.pDisplay.Display,
-                                           fgDisplay.pDisplay.Screen,
+        if (!eglChooseConfig( fgDisplay.pDisplay.eglDisplay,
+					 /* fgDisplay.pDisplay.Screen, */
                                            attributes,
-                                           &fbconfigArraySize );
+			      fbconfigArray,
+			      fbconfigArraySize,
+			      &fbconfigArraySize ))
+	  printf("eglChooseConfig[2]: %x\n", eglGetError());
 
-        if (fbconfigArray != NULL)
+        /* if (fbconfigArray != NULL) */
+        if (fbconfigArraySize > 0)
         {
             int result;  /* Returned by glXGetFBConfigAttrib, not checked. */
 
@@ -179,15 +190,15 @@ GLXFBConfig* fgPlatformChooseFBConfig( int *numcfgs )
 
                 /*  Get bufferSizeMin.  */
                 result =
-                  glXGetFBConfigAttrib( fgDisplay.pDisplay.Display,
+                  eglGetConfigAttrib( fgDisplay.pDisplay.eglDisplay,
                                         fbconfigArray[0],
-                                        GLX_BUFFER_SIZE,
+                                        EGL_BUFFER_SIZE,
                                         &bufferSizeMin );
                 /*  Get bufferSizeMax.  */
                 result =
-                  glXGetFBConfigAttrib( fgDisplay.pDisplay.Display,
+                  eglGetConfigAttrib( fgDisplay.pDisplay.eglDisplay,
                                         fbconfigArray[fbconfigArraySize - 1],
-                                        GLX_BUFFER_SIZE,
+                                        EGL_BUFFER_SIZE,
                                         &bufferSizeMax );
 
                 if (bufferSizeMax > bufferSizeMin)
@@ -196,16 +207,18 @@ GLXFBConfig* fgPlatformChooseFBConfig( int *numcfgs )
                      * Free and reallocate fbconfigArray, keeping only FBConfigs
                      * with the largest buffer size.
                      */
-                    XFree(fbconfigArray);
+                    /* XFree(fbconfigArray); */
 
                     /*  Add buffer size token at the end of the list.  */
                     where--;
-                    ATTRIB_VAL( GLX_BUFFER_SIZE, bufferSizeMax );
+                    ATTRIB_VAL( EGL_BUFFER_SIZE, bufferSizeMax );
                     ATTRIB( None );
 
-                    fbconfigArray = glXChooseFBConfig( fgDisplay.pDisplay.Display,
-                                                       fgDisplay.pDisplay.Screen,
+                    eglChooseConfig( fgDisplay.pDisplay.eglDisplay,
+                                                       /* fgDisplay.pDisplay.Screen, */
                                                        attributes,
+						     fbconfigArray,
+						     fbconfigArraySize,
                                                        &fbconfigArraySize );
                 }
             }
@@ -262,33 +275,35 @@ GLXFBConfig* fgPlatformChooseFBConfig( int *numcfgs )
 static void fghFillContextAttributes( int *attributes ) {
   int where = 0, contextFlags, contextProfile;
 
-  if ( !fghIsLegacyContextVersionRequested() ) {
-    ATTRIB_VAL( GLX_CONTEXT_MAJOR_VERSION_ARB, fgState.MajorVersion );
-    ATTRIB_VAL( GLX_CONTEXT_MINOR_VERSION_ARB, fgState.MinorVersion );
-  }
+  /* if ( !fghIsLegacyContextVersionRequested() ) { */
+  /*   ATTRIB_VAL( GLX_CONTEXT_MAJOR_VERSION_ARB, fgState.MajorVersion ); */
+  /*   ATTRIB_VAL( GLX_CONTEXT_MINOR_VERSION_ARB, fgState.MinorVersion ); */
+  /* } */
 
-  contextFlags =
-    fghMapBit( fgState.ContextFlags, GLUT_DEBUG, GLX_CONTEXT_DEBUG_BIT_ARB ) |
-    fghMapBit( fgState.ContextFlags, GLUT_FORWARD_COMPATIBLE, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB );
-  if ( contextFlags != 0 ) {
-    ATTRIB_VAL( GLX_CONTEXT_FLAGS_ARB, contextFlags );
-  }
+  /* contextFlags = */
+  /*   fghMapBit( fgState.ContextFlags, GLUT_DEBUG, GLX_CONTEXT_DEBUG_BIT_ARB ) | */
+  /*   fghMapBit( fgState.ContextFlags, GLUT_FORWARD_COMPATIBLE, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB ); */
+  /* if ( contextFlags != 0 ) { */
+  /*   ATTRIB_VAL( GLX_CONTEXT_FLAGS_ARB, contextFlags ); */
+  /* } */
 
-  contextProfile =
-    fghMapBit( fgState.ContextProfile, GLUT_CORE_PROFILE, GLX_CONTEXT_CORE_PROFILE_BIT_ARB ) |
-    fghMapBit( fgState.ContextProfile, GLUT_COMPATIBILITY_PROFILE, GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB );
-  if ( contextProfile != 0 ) {
-    ATTRIB_VAL( GLX_CONTEXT_PROFILE_MASK_ARB, contextProfile );
-  }
+  /* contextProfile = */
+  /*   fghMapBit( fgState.ContextProfile, GLUT_CORE_PROFILE, GLX_CONTEXT_CORE_PROFILE_BIT_ARB ) | */
+  /*   fghMapBit( fgState.ContextProfile, GLUT_COMPATIBILITY_PROFILE, GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB ); */
+  /* if ( contextProfile != 0 ) { */
+  /*   ATTRIB_VAL( GLX_CONTEXT_PROFILE_MASK_ARB, contextProfile ); */
+  /* } */
 
-  ATTRIB( 0 );
+  ATTRIB_VAL(EGL_CONTEXT_CLIENT_VERSION, 2);
+
+  ATTRIB( EGL_NONE );
 }
 
-typedef GLXContext (*CreateContextAttribsProc)(Display *dpy, GLXFBConfig config,
-					       GLXContext share_list, Bool direct,
-					       const int *attrib_list);
+/* typedef GLXContext (*CreateContextAttribsProc)(Display *dpy, GLXFBConfig config, */
+/* 					       GLXContext share_list, Bool direct, */
+/* 					       const int *attrib_list); */
 
-static GLXContext fghCreateNewContext( SFG_Window* window )
+static EGLContext fghCreateNewContext( SFG_Window* window )
 {
   /* for color model calculation */
   int menu = ( window->IsMenu && !fgStructure.MenuContext );
@@ -296,44 +311,54 @@ static GLXContext fghCreateNewContext( SFG_Window* window )
 
   /* "classic" context creation */
   Display *dpy = fgDisplay.pDisplay.Display;
-  GLXFBConfig config = *(window->Window.pContext.FBConfig);
-  int render_type = ( !menu && index_mode ) ? GLX_COLOR_INDEX_TYPE : GLX_RGBA_TYPE;
-  GLXContext share_list = NULL;
+  EGLConfig config = *(window->Window.pContext.FBConfig);
+  /* int render_type = ( !menu && index_mode ) ? GLX_COLOR_INDEX_TYPE : GLX_RGBA_TYPE; */
+  EGLContext share_list = NULL;
   Bool direct = ( fgState.DirectContext != GLUT_FORCE_INDIRECT_CONTEXT );
-  GLXContext context;
+  EGLContext context;
 
   /* new context creation */
   int attributes[9];
-  CreateContextAttribsProc createContextAttribs = (CreateContextAttribsProc) fgPlatformGetProcAddress( "glXCreateContextAttribsARB" );
+  /* CreateContextAttribsProc createContextAttribs = (CreateContextAttribsProc) fgPlatformGetProcAddress( "glXCreateContextAttribsARB" ); */
  
   /* glXCreateContextAttribsARB not found, yet the user has requested the new context creation */
-  if ( !createContextAttribs && !fghIsLegacyContextRequested() ) {
-    fgWarning( "OpenGL >2.1 context requested but glXCreateContextAttribsARB is not available! Falling back to legacy context creation" );
-	fgState.MajorVersion = 2;
-	fgState.MinorVersion = 1;
-  }
+  /* if ( !createContextAttribs && !fghIsLegacyContextRequested() ) { */
+  /*   fgWarning( "OpenGL >2.1 context requested but glXCreateContextAttribsARB is not available! Falling back to legacy context creation" ); */
+  /* 	fgState.MajorVersion = 2; */
+  /* 	fgState.MinorVersion = 1; */
+  /* } */
 
   /* If nothing fancy has been required, simply use the old context creation GLX API entry */
-  if ( fghIsLegacyContextRequested() || !createContextAttribs )
-  {
-    context = glXCreateNewContext( dpy, config, render_type, share_list, direct );
-    if ( context == NULL ) {
-      fghContextCreationError();
-    }
-    return context;
-  }
+  /* if ( fghIsLegacyContextRequested() || !createContextAttribs ) */
+  /* { */
+  /*   context = glXCreateNewContext( dpy, config, render_type, share_list, direct ); */
+  /*   if ( context == NULL ) { */
+  /*     fghContextCreationError(); */
+  /*   } */
+  /*   return context; */
+  /* } */
 
   /* color index mode is not available anymore with OpenGL 3.0 */
-  if ( render_type == GLX_COLOR_INDEX_TYPE ) {
-    fgWarning( "color index mode is deprecated, using RGBA mode" );
-  }
+  /* if ( render_type == GLX_COLOR_INDEX_TYPE ) { */
+  /*   fgWarning( "color index mode is deprecated, using RGBA mode" ); */
+  /* } */
 
   fghFillContextAttributes( attributes );
 
-  context = createContextAttribs( dpy, config, share_list, direct, attributes );
-  if ( context == NULL ) {
+  /* Default, but doesn't hurt */
+  eglBindAPI(EGL_OPENGL_ES_API);
+
+  context = eglCreateContext( fgDisplay.pDisplay.eglDisplay, config, EGL_NO_CONTEXT, attributes );
+  if ( context == EGL_NO_CONTEXT) {
+    fgWarning("Cannot initialize EGL context, err=%x\n", eglGetError());
     fghContextCreationError();
   }
+
+  EGLint ver = -1;
+  eglQueryContext(fgDisplay.pDisplay.eglDisplay, context, EGL_CONTEXT_CLIENT_VERSION, &ver);
+  if (ver != 2)
+    fgError("Wrong GLES major version: %d\n", ver);
+
   return context;
 }
 
@@ -413,12 +438,12 @@ void fgPlatformSetWindow ( SFG_Window *window )
 {
     if ( window )
     {
-        glXMakeContextCurrent(
-            fgDisplay.pDisplay.Display,
-            window->Window.Handle,
-            window->Window.Handle,
-            window->Window.Context
-        );
+      if (!eglMakeCurrent(
+            fgDisplay.pDisplay.eglDisplay,
+            window->Window.pContext.eglSurface,
+            window->Window.pContext.eglSurface,
+            window->Window.Context))
+	fgError("eglMakeCurrent: err=%x\n", eglGetError());
     }
 }
 
@@ -482,15 +507,22 @@ void fgPlatformOpenWindow( SFG_Window* window, const char* title,
                                   "FBConfig with necessary capabilities not found", "fgOpenWindow" );
 
     /*  Get the X visual.  */
+    XVisualInfo visualTemplate;
+    int num_visuals;
     for (i = 0; i < num_FBConfigs; i++) {
-	    visualInfo = glXGetVisualFromFBConfig( fgDisplay.pDisplay.Display,
-						   window->Window.pContext.FBConfig[i] );
+            EGLint vid = 0;
+            if (!eglGetConfigAttrib( fgDisplay.pDisplay.eglDisplay, window->Window.pContext.FBConfig[i], EGL_NATIVE_VISUAL_ID, &vid))
+	      fprintf(stderr, "eglGetConfigAttrib(EGL_NATIVE_VISUAL_ID) failed\n");
+	    visualTemplate.visualid = vid;
+	    visualInfo = XGetVisualInfo(fgDisplay.pDisplay.Display, VisualIDMask, &visualTemplate, &num_visuals);
 	    if (visualInfo)
-		break;
+    		break;
     }
 
     FREEGLUT_INTERNAL_ERROR_EXIT( visualInfo != NULL,
                                   "visualInfo could not be retrieved from FBConfig", "fgOpenWindow" );
+
+    EGLConfig config = window->Window.pContext.FBConfig[i];
 
     /*
      * XXX HINT: the masks should be updated when adding/removing callbacks.
@@ -562,7 +594,7 @@ void fgPlatformOpenWindow( SFG_Window* window, const char* title,
     }
     else if( fgState.UseCurrentContext )
     {
-        window->Window.Context = glXGetCurrentContext( );
+        window->Window.Context = eglGetCurrentContext( );
 
         if( ! window->Window.Context )
             window->Window.Context = fghCreateNewContext( window );
@@ -571,12 +603,12 @@ void fgPlatformOpenWindow( SFG_Window* window, const char* title,
         window->Window.Context = fghCreateNewContext( window );
 
 #if !defined( __FreeBSD__ ) && !defined( __NetBSD__ )
-    if(  !glXIsDirect( fgDisplay.pDisplay.Display, window->Window.Context ) )
-    {
-      if( fgState.DirectContext == GLUT_FORCE_DIRECT_CONTEXT )
-        fgError( "Unable to force direct context rendering for window '%s'",
-                 title );
-    }
+    /* if(  !glXIsDirect( fgDisplay.pDisplay.Display, window->Window.Context ) ) */
+    /* { */
+    /*   if( fgState.DirectContext == GLUT_FORCE_DIRECT_CONTEXT ) */
+    /*     fgError( "Unable to force direct context rendering for window '%s'", */
+    /*              title ); */
+    /* } */
 #endif
 
     /*
@@ -625,12 +657,9 @@ void fgPlatformOpenWindow( SFG_Window* window, const char* title,
     XSetWMProtocols( fgDisplay.pDisplay.Display, window->Window.Handle,
                      &fgDisplay.pDisplay.DeleteWindow, 1 );
 
-    glXMakeContextCurrent(
-        fgDisplay.pDisplay.Display,
-        window->Window.Handle,
-        window->Window.Handle,
-        window->Window.Context
-    );
+    window->Window.pContext.eglSurface = eglCreateWindowSurface(fgDisplay.pDisplay.eglDisplay, config, window->Window.Handle, NULL);
+    if (window->Window.pContext.eglSurface == EGL_NO_SURFACE)
+      fgError("Cannot create EGL window surface, err=%x\n", eglGetError());
 
     /* register extension events _before_ window is mapped */
     #ifdef HAVE_X11_EXTENSIONS_XINPUT2_H
@@ -638,6 +667,12 @@ void fgPlatformOpenWindow( SFG_Window* window, const char* title,
     #endif
 
     XMapWindow( fgDisplay.pDisplay.Display, window->Window.Handle );
+
+    if (!eglMakeCurrent(fgDisplay.pDisplay.eglDisplay,
+			window->Window.pContext.eglSurface,
+			window->Window.pContext.eglSurface,
+			window->Window.Context))
+      fgError("eglMakeCurrent: err=%x\n", eglGetError());
 
     XFree(visualInfo);
 
@@ -652,8 +687,8 @@ void fgPlatformOpenWindow( SFG_Window* window, const char* title,
 void fgPlatformCloseWindow( SFG_Window* window )
 {
     if( window->Window.Context )
-        glXDestroyContext( fgDisplay.pDisplay.Display, window->Window.Context );
-    XFree( window->Window.pContext.FBConfig );
+        eglDestroyContext( fgDisplay.pDisplay.eglDisplay, window->Window.Context );
+    free( window->Window.pContext.FBConfig );
 
     if( window->Window.Handle ) {
         XDestroyWindow( fgDisplay.pDisplay.Display, window->Window.Handle );

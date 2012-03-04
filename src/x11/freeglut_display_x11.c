@@ -31,6 +31,6 @@
 
 void fgPlatformGlutSwapBuffers( SFG_PlatformDisplay *pDisplayPtr, SFG_Window* CurrentWindow )
 {
-    glXSwapBuffers( pDisplayPtr->Display, CurrentWindow->Window.Handle );
+    eglSwapBuffers( pDisplayPtr->eglDisplay, CurrentWindow->Window.pContext.eglSurface );
 }
 

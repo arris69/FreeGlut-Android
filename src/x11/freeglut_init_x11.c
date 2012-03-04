@@ -174,9 +174,16 @@ void fgPlatformInitialize( const char* displayName )
     if( fgDisplay.pDisplay.Display == NULL )
         fgError( "failed to open display '%s'", XDisplayName( displayName ) );
 
-    if( !glXQueryExtension( fgDisplay.pDisplay.Display, NULL, NULL ) )
-        fgError( "OpenGL GLX extension not supported by display '%s'",
-            XDisplayName( displayName ) );
+    fgDisplay.pDisplay.eglDisplay = eglGetDisplay(fgDisplay.pDisplay.Display);
+    FREEGLUT_INTERNAL_ERROR_EXIT(fgDisplay.pDisplay.eglDisplay != EGL_NO_DISPLAY,
+				 "No display available", "fgPlatformInitialize");
+
+    if (!eglInitialize(fgDisplay.pDisplay.eglDisplay, NULL, NULL))
+      fgError("eglInitialize: error %x\n", eglGetError());
+
+    /* if( !glXQueryExtension( fgDisplay.pDisplay.Display, NULL, NULL ) ) */
+    /*     fgError( "OpenGL GLX extension not supported by display '%s'", */
+    /*         XDisplayName( displayName ) ); */
 
     fgDisplay.pDisplay.Screen = DefaultScreen( fgDisplay.pDisplay.Display );
     fgDisplay.pDisplay.RootWindow = RootWindow(
@@ -269,5 +276,6 @@ void fgPlatformCloseDisplay ( void )
 void fgPlatformDestroyContext ( SFG_PlatformDisplay pDisplay, SFG_WindowContextType MContext )
 {
     /* Note that the MVisualInfo is not owned by the MenuContext! */
-    glXDestroyContext( pDisplay.Display, MContext );
+  if (MContext != EGL_NO_CONTEXT)
+    eglDestroyContext(pDisplay.Display, MContext);
 }

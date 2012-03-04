@@ -130,7 +130,9 @@
 /* TODO: temporary work-around for e.g. glutWireCube */
 #define GLdouble     GLfloat
 #else
-#include <GL/gl.h>
+/* #include <GL/gl.h> */
+#include <EGL/egl.h>
+#include <GLES2/gl2.h>
 #include <GL/glu.h>
 #endif
 

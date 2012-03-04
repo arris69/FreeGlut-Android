@@ -35,7 +35,7 @@
  */
 
 /* A helper function to check if a display mode is possible to use */
-GLXFBConfig* fgPlatformChooseFBConfig( int* numcfgs );
+EGLConfig* fgPlatformChooseFBConfig( int* numcfgs );
 
 /*
  * Queries the GL context about some attributes
@@ -46,7 +46,7 @@ int fgPlatformGetConfig( int attribute )
   int result;  /*  Not checked  */
 
   if( fgStructure.CurrentWindow )
-      result = glXGetFBConfigAttrib( fgDisplay.pDisplay.Display,
+      result = eglGetConfigAttrib( fgDisplay.pDisplay.Display,
                                      *(fgStructure.CurrentWindow->Window.pContext.FBConfig),
                                      attribute,
                                      &returnValue );
@@ -75,48 +75,47 @@ int fgPlatformGlutGet ( GLenum eWhat )
      * check them
      */
 #   define GLX_QUERY(a,b) case a: return fgPlatformGetConfig( b );
-
-    GLX_QUERY( GLUT_WINDOW_RGBA,                GLX_RGBA                );
-    GLX_QUERY( GLUT_WINDOW_DOUBLEBUFFER,        GLX_DOUBLEBUFFER        );
-    GLX_QUERY( GLUT_WINDOW_BUFFER_SIZE,         GLX_BUFFER_SIZE         );
-    GLX_QUERY( GLUT_WINDOW_STENCIL_SIZE,        GLX_STENCIL_SIZE        );
-    GLX_QUERY( GLUT_WINDOW_DEPTH_SIZE,          GLX_DEPTH_SIZE          );
-    GLX_QUERY( GLUT_WINDOW_RED_SIZE,            GLX_RED_SIZE            );
-    GLX_QUERY( GLUT_WINDOW_GREEN_SIZE,          GLX_GREEN_SIZE          );
-    GLX_QUERY( GLUT_WINDOW_BLUE_SIZE,           GLX_BLUE_SIZE           );
-    GLX_QUERY( GLUT_WINDOW_ALPHA_SIZE,          GLX_ALPHA_SIZE          );
-    GLX_QUERY( GLUT_WINDOW_ACCUM_RED_SIZE,      GLX_ACCUM_RED_SIZE      );
-    GLX_QUERY( GLUT_WINDOW_ACCUM_GREEN_SIZE,    GLX_ACCUM_GREEN_SIZE    );
-    GLX_QUERY( GLUT_WINDOW_ACCUM_BLUE_SIZE,     GLX_ACCUM_BLUE_SIZE     );
-    GLX_QUERY( GLUT_WINDOW_ACCUM_ALPHA_SIZE,    GLX_ACCUM_ALPHA_SIZE    );
-    GLX_QUERY( GLUT_WINDOW_STEREO,              GLX_STEREO              );
+    /* GLX_QUERY( GLUT_WINDOW_DOUBLEBUFFER,        GLX_DOUBLEBUFFER        ); */
+    /* GLX_QUERY( GLUT_WINDOW_RGBA,                GLX_RGBA                ); */
+    GLX_QUERY( GLUT_WINDOW_BUFFER_SIZE,         EGL_BUFFER_SIZE         );
+    GLX_QUERY( GLUT_WINDOW_STENCIL_SIZE,        EGL_STENCIL_SIZE        );
+    GLX_QUERY( GLUT_WINDOW_DEPTH_SIZE,          EGL_DEPTH_SIZE          );
+    GLX_QUERY( GLUT_WINDOW_RED_SIZE,            EGL_RED_SIZE            );
+    GLX_QUERY( GLUT_WINDOW_GREEN_SIZE,          EGL_GREEN_SIZE          );
+    GLX_QUERY( GLUT_WINDOW_BLUE_SIZE,           EGL_BLUE_SIZE           );
+    GLX_QUERY( GLUT_WINDOW_ALPHA_SIZE,          EGL_ALPHA_SIZE          );
+    /* GLX_QUERY( GLUT_WINDOW_ACCUM_RED_SIZE,      EGL_ACCUM_RED_SIZE      ); */
+    /* GLX_QUERY( GLUT_WINDOW_ACCUM_GREEN_SIZE,    EGL_ACCUM_GREEN_SIZE    ); */
+    /* GLX_QUERY( GLUT_WINDOW_ACCUM_BLUE_SIZE,     EGL_ACCUM_BLUE_SIZE     ); */
+    /* GLX_QUERY( GLUT_WINDOW_ACCUM_ALPHA_SIZE,    EGL_ACCUM_ALPHA_SIZE    ); */
+    /* GLX_QUERY( GLUT_WINDOW_STEREO,              EGL_STEREO              ); */
 
 #   undef GLX_QUERY
 
     /* Colormap size is handled in a bit different way than all the rest */
-    case GLUT_WINDOW_COLORMAP_SIZE:
-        if( (fgPlatformGetConfig( GLX_RGBA )) || (fgStructure.CurrentWindow == NULL) )
-        {
-            /*
-             * We've got a RGBA visual, so there is no colormap at all.
-             * The other possibility is that we have no current window set.
-             */
-            return 0;
-        }
-        else
-        {
-          const GLXFBConfig * fbconfig =
-                fgStructure.CurrentWindow->Window.pContext.FBConfig;
+    /* case GLUT_WINDOW_COLORMAP_SIZE: */
+    /*     if( (fgPlatformGetConfig( GLX_RGBA )) || (fgStructure.CurrentWindow == NULL) ) */
+    /*     { */
+    /*         /\* */
+    /*          * We've got a RGBA visual, so there is no colormap at all. */
+    /*          * The other possibility is that we have no current window set. */
+    /*          *\/ */
+    /*         return 0; */
+    /*     } */
+    /*     else */
+    /*     { */
+    /*       const EGLConfig * fbconfig = */
+    /*             fgStructure.CurrentWindow->Window.pContext.FBConfig; */
 
-          XVisualInfo * visualInfo =
-                glXGetVisualFromFBConfig( fgDisplay.pDisplay.Display, *fbconfig );
+    /*       XVisualInfo * visualInfo = */
+    /*             glXGetVisualFromFBConfig( fgDisplay.pDisplay.Display, *fbconfig ); */
 
-          const int result = visualInfo->visual->map_entries;
+    /*       const int result = visualInfo->visual->map_entries; */
 
-          XFree(visualInfo);
+    /*       XFree(visualInfo); */
 
-          return result;
-        }
+    /*       return result; */
+    /*     } */
 
     /*
      * Those calls are somewhat similiar, as they use XGetWindowAttributes()
@@ -182,7 +181,7 @@ int fgPlatformGlutGet ( GLenum eWhat )
     case GLUT_DISPLAY_MODE_POSSIBLE:
     {
         /*  We should not have to call fgPlatformChooseFBConfig again here.  */
-        GLXFBConfig * fbconfig;
+        EGLConfig * fbconfig;
         int isPossible;
 
         fbconfig = fgPlatformChooseFBConfig(NULL);
@@ -202,10 +201,10 @@ int fgPlatformGlutGet ( GLenum eWhat )
 
     /* This is system-dependant */
     case GLUT_WINDOW_FORMAT_ID:
-        if( fgStructure.CurrentWindow == NULL )
+        /* if( fgStructure.CurrentWindow == NULL ) */
             return 0;
 
-        return fgPlatformGetConfig( GLX_VISUAL_ID );
+        /* return fgPlatformGetConfig( GLX_VISUAL_ID ); */
 
     default:
         fgWarning( "glutGet(): missing enum handle %d", eWhat );
@@ -301,106 +300,107 @@ int fgPlatformGlutLayerGet( GLenum eWhat )
 
 int *fgPlatformGlutGetModeValues(GLenum eWhat, int *size)
 {
-  int *array;
+  /* int *array; */
 
-  int attributes[9];
-  GLXFBConfig * fbconfigArray;  /*  Array of FBConfigs  */
-  int fbconfigArraySize;        /*  Number of FBConfigs in the array  */
-  int attribute_name = 0;
+  /* int attributes[9]; */
+  /* GLXFBConfig * fbconfigArray;  /\*  Array of FBConfigs  *\/ */
+  /* int fbconfigArraySize;        /\*  Number of FBConfigs in the array  *\/ */
+  /* int attribute_name = 0; */
 
-  array = NULL;
-  *size = 0;
+  /* array = NULL; */
+  /* *size = 0; */
 
-  switch (eWhat)
-    {
-    case GLUT_AUX:
-    case GLUT_MULTISAMPLE:
+  /* switch (eWhat) */
+  /*   { */
+  /*   case GLUT_AUX: */
+  /*   case GLUT_MULTISAMPLE: */
 
-      attributes[0] = GLX_BUFFER_SIZE;
-      attributes[1] = GLX_DONT_CARE;
+  /*     attributes[0] = GLX_BUFFER_SIZE; */
+  /*     attributes[1] = GLX_DONT_CARE; */
 
-      switch (eWhat)
-        {
-        case GLUT_AUX:
-          /*
-            FBConfigs are now sorted by increasing number of auxiliary
-            buffers.  We want at least one buffer.
-          */
-          attributes[2] = GLX_AUX_BUFFERS;
-          attributes[3] = 1;
-          attributes[4] = None;
+  /*     switch (eWhat) */
+  /*       { */
+  /*       case GLUT_AUX: */
+  /*         /\* */
+  /*           FBConfigs are now sorted by increasing number of auxiliary */
+  /*           buffers.  We want at least one buffer. */
+  /*         *\/ */
+  /*         attributes[2] = GLX_AUX_BUFFERS; */
+  /*         attributes[3] = 1; */
+  /*         attributes[4] = None; */
 
-          attribute_name = GLX_AUX_BUFFERS;
+  /*         attribute_name = GLX_AUX_BUFFERS; */
 
-          break;
+  /*         break; */
 
 
-        case GLUT_MULTISAMPLE:
-          attributes[2] = GLX_AUX_BUFFERS;
-          attributes[3] = GLX_DONT_CARE;
-          attributes[4] = GLX_SAMPLE_BUFFERS;
-          attributes[5] = 1;
-          /*
-            FBConfigs are now sorted by increasing number of samples per
-            pixel.  We want at least one sample.
-          */
-          attributes[6] = GLX_SAMPLES;
-          attributes[7] = 1;
-          attributes[8] = None;
+  /*       case GLUT_MULTISAMPLE: */
+  /*         attributes[2] = GLX_AUX_BUFFERS; */
+  /*         attributes[3] = GLX_DONT_CARE; */
+  /*         attributes[4] = GLX_SAMPLE_BUFFERS; */
+  /*         attributes[5] = 1; */
+  /*         /\* */
+  /*           FBConfigs are now sorted by increasing number of samples per */
+  /*           pixel.  We want at least one sample. */
+  /*         *\/ */
+  /*         attributes[6] = GLX_SAMPLES; */
+  /*         attributes[7] = 1; */
+  /*         attributes[8] = None; */
 
-          attribute_name = GLX_SAMPLES;
+  /*         attribute_name = GLX_SAMPLES; */
 
-          break;
-        }
+  /*         break; */
+  /*       } */
 
-      fbconfigArray = glXChooseFBConfig(fgDisplay.pDisplay.Display,
-                                        fgDisplay.pDisplay.Screen,
-                                        attributes,
-                                        &fbconfigArraySize);
+  /*     fbconfigArray = glXChooseFBConfig(fgDisplay.pDisplay.Display, */
+  /*                                       fgDisplay.pDisplay.Screen, */
+  /*                                       attributes, */
+  /*                                       &fbconfigArraySize); */
 
-      if (fbconfigArray != NULL)
-        {
-          int * temp_array;
-          int result;   /*  Returned by glXGetFBConfigAttrib. Not checked.  */
-          int previous_value;
-          int i;
+  /*     if (fbconfigArray != NULL) */
+  /*       { */
+  /*         int * temp_array; */
+  /*         int result;   /\*  Returned by glXGetFBConfigAttrib. Not checked.  *\/ */
+  /*         int previous_value; */
+  /*         int i; */
 
-          temp_array = malloc(sizeof(int) * fbconfigArraySize);
-          previous_value = 0;
+  /*         temp_array = malloc(sizeof(int) * fbconfigArraySize); */
+  /*         previous_value = 0; */
 
-          for (i = 0; i < fbconfigArraySize; i++)
-            {
-              int value;
+  /*         for (i = 0; i < fbconfigArraySize; i++) */
+  /*           { */
+  /*             int value; */
 
-              result = glXGetFBConfigAttrib(fgDisplay.pDisplay.Display,
-                                            fbconfigArray[i],
-                                            attribute_name,
-                                            &value);
-              if (value > previous_value)
-                {
-                  temp_array[*size] = value;
-                  previous_value = value;
-                  (*size)++;
-                }
-            }
+  /*             result = glXGetFBConfigAttrib(fgDisplay.pDisplay.Display, */
+  /*                                           fbconfigArray[i], */
+  /*                                           attribute_name, */
+  /*                                           &value); */
+  /*             if (value > previous_value) */
+  /*               { */
+  /*                 temp_array[*size] = value; */
+  /*                 previous_value = value; */
+  /*                 (*size)++; */
+  /*               } */
+  /*           } */
 
-          array = malloc(sizeof(int) * (*size));
-          for (i = 0; i < *size; i++)
-            {
-              array[i] = temp_array[i];
-            }
+  /*         array = malloc(sizeof(int) * (*size)); */
+  /*         for (i = 0; i < *size; i++) */
+  /*           { */
+  /*             array[i] = temp_array[i]; */
+  /*           } */
 
-          free(temp_array);
-          XFree(fbconfigArray);
-        }
+  /*         free(temp_array); */
+  /*         XFree(fbconfigArray); */
+  /*       } */
 
-      break;
+  /*     break; */
 
-    default:
-      break;
-    }
+  /*   default: */
+  /*     break; */
+  /*   } */
 
-  return array;
+  /* return array; */
+  return NULL;
 }
 
 

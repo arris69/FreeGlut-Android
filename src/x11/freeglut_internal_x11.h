@@ -30,7 +30,7 @@
 
 
 /* -- PLATFORM-SPECIFIC INCLUDES ------------------------------------------- */
-#include <GL/glx.h>
+/* #include <GL/glx.h> */
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
@@ -58,6 +58,7 @@ typedef struct tagSFG_PlatformDisplay SFG_PlatformDisplay;
 struct tagSFG_PlatformDisplay
 {
     Display*        Display;            /* The display we are being run in.  */
+    EGLDisplay      eglDisplay;
     int             Screen;             /* The screen we are about to use.   */
     Window          RootWindow;         /* The screen's root window.         */
     int             Connection;         /* The display's connection number   */
@@ -93,11 +94,12 @@ struct tagSFG_PlatformDisplay
  * much conditionally-compiled code later in the library.
  */
 typedef Window     SFG_WindowHandleType ;
-typedef GLXContext SFG_WindowContextType ;
+typedef EGLContext SFG_WindowContextType ;
 typedef struct tagSFG_PlatformContext SFG_PlatformContext;
 struct tagSFG_PlatformContext
 {
-    GLXFBConfig*    FBConfig;        /* The window's FBConfig               */
+    EGLConfig*    FBConfig;        /* The window's FBConfig               */
+    EGLSurface    eglSurface;
 };
 
 
