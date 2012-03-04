@@ -56,7 +56,7 @@ void fghCreateContext( ) {
   EGLConfig config;
   EGLContext context;
 
-  EGLDisplay display = fgDisplay.pDisplay.eglDisplay;
+  EGLDisplay eglDisplay = fgDisplay.pDisplay.eglDisplay;
 
   /* TODO : apply DisplayMode */
   /*        (GLUT_DEPTH already applied in attribs[] above) */
@@ -64,20 +64,31 @@ void fghCreateContext( ) {
   /* Here, the application chooses the configuration it desires. In this
    * sample, we have a very simplified selection process, where we pick
    * the first EGLConfig that matches our criteria */
-  eglChooseConfig(display, attribs, &config, 1, &numConfigs);
+  eglChooseConfig(eglDisplay, attribs, &config, 1, &numConfigs);
 
   /* EGL_NATIVE_VISUAL_ID is an attribute of the EGLConfig that is
    * guaranteed to be accepted by ANativeWindow_setBuffersGeometry().
    * As soon as we picked a EGLConfig, we can safely reconfigure the
    * ANativeWindow buffers to match, using EGL_NATIVE_VISUAL_ID. */
-  eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
+  eglGetConfigAttrib(eglDisplay, config, EGL_NATIVE_VISUAL_ID, &format);
+
+  /* Default, but doesn't hurt */
+  eglBindAPI(EGL_OPENGL_ES_API);
 
   /* Ensure OpenGLES 2.0 context */
   static const EGLint ctx_attribs[] = {
     EGL_CONTEXT_CLIENT_VERSION, 2,
     EGL_NONE
   };
-  context = eglCreateContext(display, config, EGL_NO_CONTEXT, ctx_attribs);
+  context = eglCreateContext(eglDisplay, config, EGL_NO_CONTEXT, ctx_attribs);
+  if (context == EGL_NO_CONTEXT) {
+    fgWarning("Cannot initialize EGL context, err=%x\n", eglGetError());
+    fghContextCreationError();
+  }
+  EGLint ver = -1;
+  eglQueryContext(fgDisplay.pDisplay.eglDisplay, context, EGL_CONTEXT_CLIENT_VERSION, &ver);
+  if (ver != 2)
+    fgError("Wrong GLES major version: %d\n", ver);
 
   fgDisplay.pDisplay.eglContext = context;
   fgDisplay.pDisplay.eglContextConfig = config;
@@ -94,10 +105,10 @@ EGLSurface fghEGLPlatformOpenWindow( EGLNativeWindowType handle )
   EGLConfig  config  = fgDisplay.pDisplay.eglContextConfig;
 
   EGLSurface surface = eglCreateWindowSurface(display, config, handle, NULL);
-  if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
-    fprintf(stderr, "Unable to eglMakeCurrent");
-    return;
-  }
+  if (surf == EGL_NO_SURFACE)
+    fgError("Cannot create EGL window surface, err=%x\n", eglGetError());
+  if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE)
+    fgError("eglMakeCurrent: err=%x\n", eglGetError());
 
   //EGLint w, h;
   //eglQuerySurface(display, surface, EGL_WIDTH, &w);
