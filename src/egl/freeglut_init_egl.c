@@ -52,17 +52,23 @@ void fgPlatformInitialize( const char* displayName )
 
 void fgPlatformCloseDisplay ( void )
 {
+  eglMakeCurrent(fgDisplay.pDisplay.eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+  if (fgDisplay.pDisplay.eglContext != EGL_NO_CONTEXT) {
+    eglDestroyContext(fgDisplay.pDisplay.eglDisplay, fgDisplay.pDisplay.eglContext);
+    fgDisplay.pDisplay.eglContext = EGL_NO_CONTEXT;
+  }
+
   if (fgDisplay.pDisplay.eglDisplay != EGL_NO_DISPLAY) {
     eglTerminate(fgDisplay.pDisplay.eglDisplay);
     fgDisplay.pDisplay.eglDisplay = EGL_NO_DISPLAY;
   }
 }
 
+/**
+ * Destroy a menu context
+ */
 void fgPlatformDestroyContext ( SFG_PlatformDisplay pDisplay, SFG_WindowContextType MContext )
 {
-  eglMakeCurrent(pDisplay.eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-  if (pDisplay.eglContext != EGL_NO_CONTEXT) {
-    eglDestroyContext(pDisplay.eglDisplay, pDisplay.eglContext);
-    pDisplay.eglContext = EGL_NO_CONTEXT;
-  }
+  if (MContext != EGL_NO_CONTEXT)
+    eglDestroyContext(pDisplay.eglDisplay, MContext);
 }
