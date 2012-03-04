@@ -38,8 +38,14 @@ void fgPlatformInitialize( const char* displayName )
   fgState.Initialised = GL_TRUE;
 
   /* CreateDisplay */
-  fgDisplay.pDisplay.eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  eglInitialize(fgDisplay.pDisplay.eglDisplay, 0, 0);
+  /* Using EGL_DEFAULT_DISPLAY, or a specific native display */
+  EGLNativeDisplayType nativeDisplay = EGL_DEFAULT_DISPLAY;
+  fgDisplay.pDisplay.eglDisplay = eglGetDisplay(nativeDisplay);
+
+  FREEGLUT_INTERNAL_ERROR_EXIT(fgDisplay.pDisplay.eglDisplay != EGL_NO_DISPLAY,
+			       "No display available", "fgPlatformInitialize");
+  if (!eglInitialize(fgDisplay.pDisplay.eglDisplay, NULL, NULL))
+    fgError("eglInitialize: error %x\n", eglGetError());
 
   /* CreateContext */
   fghCreateContext();

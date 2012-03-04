@@ -39,13 +39,18 @@ void fghCreateContext( ) {
   printf("DisplayMode: %d (DEPTH %d)\n", fgState.DisplayMode, (fgState.DisplayMode & GLUT_DEPTH));
   const EGLint attribs[] = {
     EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-    EGL_BLUE_SIZE, 8,
-    EGL_GREEN_SIZE, 8,
-    EGL_RED_SIZE, 8,
     EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-    EGL_DEPTH_SIZE, (fgState.DisplayMode & GLUT_DEPTH) ? 24 : 0,
+    EGL_BLUE_SIZE, 1,
+    EGL_GREEN_SIZE, 1,
+    EGL_RED_SIZE, 1,
+    EGL_ALPHA_SIZE, (fgState.DisplayMode & GLUT_ALPHA) ? 1 : 0,
+    EGL_DEPTH_SIZE, (fgState.DisplayMode & GLUT_DEPTH) ? 1 : 0,
+    EGL_STENCIL_SIZE, (fgState.DisplayMode & GLUT_STENCIL) ? 1 : 0,
+    EGL_SAMPLE_BUFFERS, (fgState.DisplayMode & GLUT_MULTISAMPLE) ? 1 : 0,
+    EGL_SAMPLES, (fgState.DisplayMode & GLUT_MULTISAMPLE) ? fgState.SampleNumber : 0,
     EGL_NONE
   };
+
   EGLint format;
   EGLint numConfigs;
   EGLConfig config;
