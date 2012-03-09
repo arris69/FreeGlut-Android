@@ -1,6 +1,8 @@
 PROJECT(freeglut)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
+SET(VERSION 3.0.0)
+
 SET(FREEGLUT_HEADERS
 	include/GL/freeglut.h
 	include/GL/freeglut_ext.h
@@ -177,6 +179,9 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_BINARY_DIR}/config.h)
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src)
 ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 
+# pkg-config support, to install at $(libdir)/pkgconfig
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/freeglut.pc.in ${CMAKE_BINARY_DIR}/freeglut.pc @ONLY)
+
 # by default, at least on UNIX, we want to build both
 IF(BUILD_SHARED_LIBS)
 	ADD_LIBRARY(freeglut SHARED ${FREEGLUT_SRCS})
@@ -228,6 +233,7 @@ IF(BUILD_STATIC_LIBS)
 	INSTALL(TARGETS freeglut_static DESTINATION lib)
 ENDIF()
 INSTALL(FILES ${FREEGLUT_HEADERS} DESTINATION include/GL)
+INSTALL(FILES ${CMAKE_BINARY_DIR}/freeglut.pc DESTINATION share/pkgconfig)
 
 
 
