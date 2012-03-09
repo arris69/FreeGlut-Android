@@ -29,6 +29,7 @@
 #define FREEGLUT_BUILDING_LIB
 #include <GL/freeglut.h>
 #include "../Common/freeglut_internal.h"
+extern EGLSurface fghEGLPlatformOpenWindow( EGLNativeWindowType handle );
 
 /*
  * Opens a window. Requires a SFG_Window object created and attached

@@ -105,7 +105,7 @@ EGLSurface fghEGLPlatformOpenWindow( EGLNativeWindowType handle )
   EGLConfig  config  = fgDisplay.pDisplay.eglContextConfig;
 
   EGLSurface surface = eglCreateWindowSurface(display, config, handle, NULL);
-  if (surf == EGL_NO_SURFACE)
+  if (surface == EGL_NO_SURFACE)
     fgError("Cannot create EGL window surface, err=%x\n", eglGetError());
   if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE)
     fgError("eglMakeCurrent: err=%x\n", eglGetError());
