@@ -73,9 +73,9 @@ SFG_State fgState = { { -1, -1, GL_FALSE },  /* Position */
                       0,                      /* ActiveMenus */
                       NULL,                   /* MenuStateCallback */
                       NULL,                   /* MenuStatusCallback */
-                      { 640, 480, GL_TRUE },  /* GameModeSize */
-                      16,                     /* GameModeDepth */
-                      72,                     /* GameModeRefresh */
+                      { -1, -1, GL_TRUE },    /* GameModeSize */
+                      -1,                     /* GameModeDepth */
+                      -1,                     /* GameModeRefresh */
                       GLUT_ACTION_EXIT,       /* ActionOnWindowClose */
                       GLUT_EXEC_STATE_INIT,   /* ExecState */
                       NULL,                   /* ProgramName */
@@ -286,10 +286,10 @@ void fgDeinitialize( void )
     fgState.KeyRepeat       = GLUT_KEY_REPEAT_ON;
     fgState.Modifiers       = INVALID_MODIFIERS;
 
-    fgState.GameModeSize.X  = 640;
-    fgState.GameModeSize.Y  = 480;
-    fgState.GameModeDepth   =  16;
-    fgState.GameModeRefresh =  72;
+    fgState.GameModeSize.X  = -1;
+    fgState.GameModeSize.Y  = -1;
+    fgState.GameModeDepth   = -1;
+    fgState.GameModeRefresh = -1;
 
     fgListInit( &fgState.Timers );
     fgListInit( &fgState.FreeTimers );
@@ -314,9 +314,8 @@ void fgDeinitialize( void )
 }
 
 /* -- INTERFACE FUNCTIONS -------------------------------------------------- */
-
 #if !TARGET_HOST_POSIX_X11
-#include "Common/xparsegeometry_repl.h"
+#   include "../Common/xparsegeometry_repl.h"
 #endif
 
 /*
@@ -498,7 +497,7 @@ void FGAPIENTRY glutInitDisplayString( const char* displayMode )
                      configuration is conformant or not */
             break ;
 
-        case 6 : /* "depth":  Number of bits of precsion in the depth buffer */
+        case 6 : /* "depth":  Number of bits of precision in the depth buffer */
             glut_state_flag |= GLUT_DEPTH ;  /* Somebody fix this for me! */
             break ;
 
@@ -618,8 +617,7 @@ void FGAPIENTRY glutInitDisplayString( const char* displayMode )
             break ;
 
         case 35 :  /* "borderless":  windows should not have borders */
-#if TARGET_HOST_POSIX_X11
-#endif
+            glut_state_flag |= GLUT_BORDERLESS;
             break ;
 
         case 36 :  /* "aux":  some number of aux buffers */
@@ -645,7 +643,7 @@ void FGAPIENTRY glutInitDisplayString( const char* displayMode )
 
 void FGAPIENTRY glutInitContextVersion( int majorVersion, int minorVersion )
 {
-    /* We will make use of these valuse when creating a new OpenGL context... */
+    /* We will make use of these value when creating a new OpenGL context... */
     fgState.MajorVersion = majorVersion;
     fgState.MinorVersion = minorVersion;
 }
