@@ -313,6 +313,7 @@ void fgDeinitialize( void )
     fgState.Initialised = GL_FALSE;
 }
 
+
 /* -- INTERFACE FUNCTIONS -------------------------------------------------- */
 #if !TARGET_HOST_POSIX_X11
 #   include "../Common/xparsegeometry_repl.h"
