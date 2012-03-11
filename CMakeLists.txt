@@ -1,8 +1,6 @@
 PROJECT(freeglut)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-SET(VERSION 3.0.0)
-
 SET(FREEGLUT_HEADERS
 	include/GL/freeglut.h
 	include/GL/freeglut_ext.h
@@ -11,7 +9,6 @@ SET(FREEGLUT_HEADERS
 )
 SET(FREEGLUT_SRCS
 	${FREEGLUT_HEADERS}
-
 	src/Common/freeglut_callbacks.c
 	src/Common/freeglut_cursor.c
 	src/Common/freeglut_display.c
@@ -36,11 +33,11 @@ SET(FREEGLUT_SRCS
 # Android port requires adding a version of these compatible with
 # OpenGL ES (TODO):
 IF(NOT ANDROID)
-	LIST(APPEND FREEGLUT_SRCS
-		src/Common/freeglut_font.c
-		src/Common/freeglut_geometry.c
-		src/Common/freeglut_menu.c
-		src/Common/freeglut_teapot.c
+       LIST(APPEND FREEGLUT_SRCS
+               src/Common/freeglut_font.c
+               src/Common/freeglut_geometry.c
+               src/Common/freeglut_menu.c
+               src/Common/freeglut_teapot.c
 )
 ENDIF()
 
@@ -64,26 +61,26 @@ IF(WIN32)
 		src/mswin/freeglut_window_mswin.c
 )
 ELSEIF(ANDROID)
-	LIST(APPEND FREEGLUT_SRCS
-		src/Common/xparsegeometry_repl.c
-		src/Common/xparsegeometry_repl.h
-		src/egl/freeglut_internal_egl.h
-		src/egl/freeglut_display_egl.c
-		src/egl/freeglut_init_egl.c
-		src/egl/freeglut_structure_egl.c
-		src/egl/freeglut_window_egl.c
-		src/android/native_app_glue/android_native_app_glue.c
-		src/android/native_app_glue/android_native_app_glue.h
-		src/android/freeglut_runtime_android.c
-		src/android/freeglut_gamemode_android.c
-		src/android/freeglut_input_devices_android.c
-		src/android/freeglut_joystick_android.c
-		src/android/freeglut_main_android.c
-		src/android/freeglut_spaceball_android.c
-		src/android/freeglut_state_android.c
-		src/android/freeglut_window_android.c
-		src/android/opengles_stubs.c
-		src/android/freeglut_internal_android.h
+       LIST(APPEND FREEGLUT_SRCS
+               src/Common/xparsegeometry_repl.c
+               src/Common/xparsegeometry_repl.h
+               src/egl/freeglut_internal_egl.h
+               src/egl/freeglut_display_egl.c
+               src/egl/freeglut_init_egl.c
+               src/egl/freeglut_structure_egl.c
+               src/egl/freeglut_window_egl.c
+               src/android/native_app_glue/android_native_app_glue.c
+               src/android/native_app_glue/android_native_app_glue.h
+               src/android/freeglut_runtime_android.c
+               src/android/freeglut_gamemode_android.c
+               src/android/freeglut_input_devices_android.c
+               src/android/freeglut_joystick_android.c
+               src/android/freeglut_main_android.c
+               src/android/freeglut_spaceball_android.c
+               src/android/freeglut_state_android.c
+               src/android/freeglut_window_android.c
+               src/android/opengles_stubs.c
+               src/android/freeglut_internal_android.h
 )
 ELSE()
 	LIST(APPEND FREEGLUT_SRCS
@@ -117,24 +114,26 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 OPTION(BUILD_SHARED_LIBS "Build FreeGLUT shared library." ON)
 OPTION(BUILD_STATIC_LIBS "Build FreeGLUT static library." ON)
 
-SET(BUILD_OPENGL "OPENGL")
-IF(ANDROID)
-  # SET(BUILD_OPENGL "GLESv1")
-  SET(BUILD_OPENGL "GLESv2")
-ENDIF()
+# OpenGL ES support
+OPTION(FREEGLUT_GLES1 "Use OpenGL ES 1.x (requires EGL)" OFF)
+OPTION(FREEGLUT_GLES2 "Use OpenGL ES 2.x (requires EGL) (overrides BUILD_GLES1)" OFF)
 
-IF(BUILD_OPENGL STREQUAL "OPENGL")
+IF(FREEGLUT_GLES2)
+  ADD_DEFINITIONS(-DGLESv2)
+  LIST(APPEND LIBS GLESv2 EGL)
+ELSEIF(FREEGLUT_GLES1)
+  ADD_DEFINITIONS(-DGLESv1)
+  LIST(APPEND LIBS GLESv1 EGL)
+ELSE()
   FIND_PACKAGE(OpenGL REQUIRED)
   LIST(APPEND LIBS ${OPENGL_gl_LIBRARY})
   INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR})
-ELSEIF(BUILD_OPENGL STREQUAL "GLESv1")
-  ADD_DEFINITIONS(-DGLESv1)
-  LIST(APPEND LIBS GLESv1 EGL)
-ELSEIF(BUILD_OPENGL STREQUAL "GLESv2")
-  ADD_DEFINITIONS(-DGLESv2)
-  LIST(APPEND LIBS GLESv2 EGL)
 ENDIF()
-LIST(APPEND LIBS m)
+
+# lib m for math, not needed on windows
+IF (NOT WIN32)
+    LIST(APPEND LIBS m)
+ENDIF()
 
 IF(WIN32)
 	MESSAGE(WARNING "Insecure CRT warnings hidden (might want to fix these)")
@@ -180,9 +179,6 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_BINARY_DIR}/config.h)
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src)
 ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 
-# pkg-config support, to install at $(libdir)/pkgconfig
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/freeglut.pc.in ${CMAKE_BINARY_DIR}/freeglut.pc @ONLY)
-
 # by default, at least on UNIX, we want to build both
 IF(BUILD_SHARED_LIBS)
 	ADD_LIBRARY(freeglut SHARED ${FREEGLUT_SRCS})
@@ -203,7 +199,10 @@ IF(WIN32)
 	ENDIF()
 ELSE()
 	# on UNIX we need to make sure:
-	# - all shared libraries must have a soname/version
+	# - all shared libraries must have a soname/version, see :
+	#   http://sourceware.org/autobook/autobook/autobook_91.html#SEC91
+	#   http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+	#   Current: -version-info 12:0:9 -> 3.9.0
 	# - the output library should be named glut so it'll be linkable with -lglut
 	# - the shared library should link to the dependency libraries so that the user
 	#   won't have to link them explicitly (they shouldn't have to know that we depend
@@ -224,8 +223,12 @@ ELSE()
 		ADD_DEFINITIONS(-DANDROID)
 	ENDIF()
 ENDIF()
-TARGET_LINK_LIBRARIES(freeglut ${LIBS})
-TARGET_LINK_LIBRARIES(freeglut_static ${LIBS})
+IF(BUILD_SHARED_LIBS)
+    TARGET_LINK_LIBRARIES(freeglut ${LIBS})
+ENDIF()
+IF(BUILD_STATIC_LIBS)
+    TARGET_LINK_LIBRARIES(freeglut_static ${LIBS})
+ENDIF()
 
 IF(BUILD_SHARED_LIBS)
 	INSTALL(TARGETS freeglut DESTINATION lib)
@@ -234,25 +237,33 @@ IF(BUILD_STATIC_LIBS)
 	INSTALL(TARGETS freeglut_static DESTINATION lib)
 ENDIF()
 INSTALL(FILES ${FREEGLUT_HEADERS} DESTINATION include/GL)
-INSTALL(FILES ${CMAKE_BINARY_DIR}/freeglut.pc DESTINATION share/pkgconfig)
 
+# pkg-config support, to install at $(libdir)/pkgconfig
+SET(VERSION 3.0.0)
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/freeglut.pc.in ${CMAKE_BINARY_DIR}/freeglut.pc @ONLY)
+INSTALL(FILES ${CMAKE_BINARY_DIR}/freeglut.pc DESTINATION share/pkgconfig)
 
 
 # Optionally build demos, on by default.
 option( FREEGLUT_BUILD_DEMOS "Build FreeGLUT demos." ON )
 
 SET(DEMO_LIBS ${OPENGL_glu_LIBRARY} ${LIBS})
-LIST(APPEND DEMO_LIBS m)
+# lib m for math, not needed on windows
+IF (NOT WIN32)
+    LIST(APPEND DEMO_LIBS m)
+ENDIF()
 
 MACRO(ADD_DEMO name)
-	if( FREEGLUT_BUILD_DEMOS )
-		ADD_EXECUTABLE(${name} ${ARGN})
-		IF(BUILD_SHARED_LIBS)
-			TARGET_LINK_LIBRARIES(${name} ${DEMO_LIBS} freeglut)
-		ELSE()
-			TARGET_LINK_LIBRARIES(${name} ${DEMO_LIBS} freeglut_static)
-		ENDIF()
-	endif()
+    IF( FREEGLUT_BUILD_DEMOS )
+        IF(BUILD_SHARED_LIBS)
+            ADD_EXECUTABLE(${name} ${ARGN})
+            TARGET_LINK_LIBRARIES(${name} ${DEMO_LIBS} freeglut)
+        ENDIF()
+        IF(BUILD_STATIC_LIBS)
+            ADD_EXECUTABLE(${name}_static ${ARGN})
+            TARGET_LINK_LIBRARIES(${name}_static ${DEMO_LIBS} freeglut_static)
+        ENDIF()
+    ENDIF()
 ENDMACRO()
 
 ADD_DEMO(CallbackMaker   progs/demos/CallbackMaker/CallbackMaker.c)
@@ -267,4 +278,4 @@ ADD_DEMO(spaceball       progs/demos/spaceball/spaceball.c
                          progs/demos/spaceball/vmath.c
                          progs/demos/spaceball/vmath.h)
 ADD_DEMO(subwin          progs/demos/subwin/subwin.c)
-#include(CMakePrintSystemInformation)
+ADD_DEMO(timer           progs/demos/timer/timer.c)
