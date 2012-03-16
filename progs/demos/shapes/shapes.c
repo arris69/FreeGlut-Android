@@ -13,6 +13,7 @@
       -    <tt>Esc &nbsp;</tt> Quit
       -    <tt>q Q &nbsp;</tt> Quit
       -    <tt>i I &nbsp;</tt> Show info
+      -    <tt>p P &nbsp;</tt> Toggle perspective or orthographic projection
       -    <tt>= + &nbsp;</tt> Increase \a slices
       -    <tt>- _ &nbsp;</tt> Decreate \a slices
       -    <tt>, < &nbsp;</tt> Decreate \a stacks
@@ -60,40 +61,42 @@ static int function_index;
 static int slices = 16;
 static int stacks = 16;
 static double irad = .25;
-static double orad = 1.0;
+static double orad = 1.0;   /* doubles as size for objects other than Torus */
 static int depth = 4;
 static double offset[ 3 ] = { 0, 0, 0 };
 static GLboolean show_info = GL_TRUE;
+static float ar;
+static int persProject = 1;
 
 /*
  * These one-liners draw particular objects, fetching appropriate
  * information from the above globals.  They are just thin wrappers
- * for the OpenGLUT objects.
+ * for the FreeGLUT objects.
  */
-static void drawSolidTetrahedron(void)         { glutSolidTetrahedron ();                      }
-static void drawWireTetrahedron(void)          { glutWireTetrahedron ();                       }
-static void drawSolidCube(void)                { glutSolidCube(1);                             }
-static void drawWireCube(void)                 { glutWireCube(1);                              }
-static void drawSolidOctahedron(void)          { glutSolidOctahedron ();                       }
-static void drawWireOctahedron(void)           { glutWireOctahedron ();                        }
-static void drawSolidDodecahedron(void)        { glutSolidDodecahedron ();                     }
-static void drawWireDodecahedron(void)         { glutWireDodecahedron ();                      }
-static void drawSolidRhombicDodecahedron(void) { glutSolidRhombicDodecahedron ();              }
-static void drawWireRhombicDodecahedron(void)  { glutWireRhombicDodecahedron ();               }
-static void drawSolidIcosahedron(void)         { glutSolidIcosahedron ();                      }
-static void drawWireIcosahedron(void)          { glutWireIcosahedron ();                       }
-static void drawSolidSierpinskiSponge(void)    { glutSolidSierpinskiSponge (depth, offset, 1); }
-static void drawWireSierpinskiSponge(void)     { glutWireSierpinskiSponge (depth, offset, 1);  }
-static void drawSolidTeapot(void)              { glutSolidTeapot(1);                           }
-static void drawWireTeapot(void)               { glutWireTeapot(1);                            }
-static void drawSolidTorus(void)               { glutSolidTorus(irad,orad,slices,stacks);      }
-static void drawWireTorus(void)                { glutWireTorus (irad,orad,slices,stacks);      }
-static void drawSolidSphere(void)              { glutSolidSphere(1,slices,stacks);             }
-static void drawWireSphere(void)               { glutWireSphere(1,slices,stacks);              }
-static void drawSolidCone(void)                { glutSolidCone(1,1,slices,stacks);             }
-static void drawWireCone(void)                 { glutWireCone(1,1,slices,stacks);              }
-static void drawSolidCylinder(void)            { glutSolidCylinder(1,1,slices,stacks);         }
-static void drawWireCylinder(void)             { glutWireCylinder(1,1,slices,stacks);          }
+static void drawSolidTetrahedron(void)         { glutSolidTetrahedron ();                        }
+static void drawWireTetrahedron(void)          { glutWireTetrahedron ();                         }
+static void drawSolidCube(void)                { glutSolidCube(orad);                            }  /* orad doubles as size input */
+static void drawWireCube(void)                 { glutWireCube(orad);                             }  /* orad doubles as size input */
+static void drawSolidOctahedron(void)          { glutSolidOctahedron ();                         }
+static void drawWireOctahedron(void)           { glutWireOctahedron ();                          }
+static void drawSolidDodecahedron(void)        { glutSolidDodecahedron ();                       }
+static void drawWireDodecahedron(void)         { glutWireDodecahedron ();                        }
+static void drawSolidRhombicDodecahedron(void) { glutSolidRhombicDodecahedron ();                }
+static void drawWireRhombicDodecahedron(void)  { glutWireRhombicDodecahedron ();                 }
+static void drawSolidIcosahedron(void)         { glutSolidIcosahedron ();                        }
+static void drawWireIcosahedron(void)          { glutWireIcosahedron ();                         }
+static void drawSolidSierpinskiSponge(void)    { glutSolidSierpinskiSponge (depth, offset, orad);}  /* orad doubles as size input */
+static void drawWireSierpinskiSponge(void)     { glutWireSierpinskiSponge (depth, offset, orad); }  /* orad doubles as size input */
+static void drawSolidTeapot(void)              { glutSolidTeapot(orad);                          }  /* orad doubles as size input */
+static void drawWireTeapot(void)               { glutWireTeapot(orad);                           }  /* orad doubles as size input */
+static void drawSolidTorus(void)               { glutSolidTorus(irad,orad,slices,stacks);        }
+static void drawWireTorus(void)                { glutWireTorus (irad,orad,slices,stacks);        }
+static void drawSolidSphere(void)              { glutSolidSphere(orad,slices,stacks);            }  /* orad doubles as size input */
+static void drawWireSphere(void)               { glutWireSphere(orad,slices,stacks);             }  /* orad doubles as size input */
+static void drawSolidCone(void)                { glutSolidCone(orad,orad,slices,stacks);         }  /* orad doubles as size input */
+static void drawWireCone(void)                 { glutWireCone(orad,orad,slices,stacks);          }  /* orad doubles as size input */
+static void drawSolidCylinder(void)            { glutSolidCylinder(orad,orad,slices,stacks);     }  /* orad doubles as size input */
+static void drawWireCylinder(void)             { glutWireCylinder(orad,orad,slices,stacks);      }  /* orad doubles as size input */
 
 #define RADIUS    1.0f
 
@@ -174,7 +177,7 @@ static const entry table [] =
 #undef ENTRY
 
 /*!
-    Does printf()-like work using freeglut/OpenGLUT
+    Does printf()-like work using freeglut
     glutBitmapString().  Uses a fixed font.  Prints
     at the indicated row/column position.
 
@@ -210,7 +213,7 @@ static void shapesPrintf (int row, int col, const char *fmt, ...)
         glRasterPos2i
         (
               glutBitmapWidth(font, ' ') * col,
-            - glutBitmapHeight(font) * (row+2) + viewport[3]
+            - glutBitmapHeight(font) * row + viewport[3]
         );
         glutBitmapString (font, (unsigned char*)buf);
 
@@ -224,22 +227,24 @@ static void shapesPrintf (int row, int col, const char *fmt, ...)
 static void
 resize(int width, int height)
 {
-    const float ar = (float) width / (float) height;
+    ar = (float) width / (float) height;
 
     glViewport(0, 0, width, height);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glFrustum(-ar, ar, -1.0, 1.0, 2.0, 100.0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity() ;
 }
 
 static void display(void)
 {
     const double t = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
     const double a = t*90.0;
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    if (persProject)
+        glFrustum(-ar, ar, -1.0, 1.0, 2.0, 100.0);
+    else
+        glOrtho(-ar*3, ar*3, -3.0, 3.0, 2.0, 100.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -265,12 +270,12 @@ static void display(void)
     glColor3d(0.1,0.1,0.4);
 
     if( show_info ) {
-        shapesPrintf (1, 3, "Shape PgUp PgDn: %s", table [function_index].name);
-        shapesPrintf (2, 3, "Slices +-: %d   Stacks <>: %d", slices, stacks);
-        shapesPrintf (3, 3, "nSides +-: %d   nRings <>: %d", slices, stacks);
-        shapesPrintf (4, 3, "Depth  (): %d", depth);
-        shapesPrintf (5, 3, "Outer radius  Up  Down : %f", orad);
-        shapesPrintf (6, 3, "Inner radius Left Right: %f", irad);
+        shapesPrintf (1, 1, "Shape PgUp PgDn: %s", table [function_index].name);
+        shapesPrintf (2, 1, "Slices +-: %d   Stacks <>: %d", slices, stacks);
+        shapesPrintf (3, 1, "nSides +-: %d   nRings <>: %d", slices, stacks);
+        shapesPrintf (4, 1, "Depth  (): %d", depth);
+        shapesPrintf (5, 1, "Outer radius  Up  Down : %f", orad);
+        shapesPrintf (6, 1, "Inner radius Left Right: %f", irad);
     } else {
         printf ( "Shape %d slides %d stacks %d\n", function_index, slices, stacks ) ;
     }
@@ -308,6 +313,9 @@ key(unsigned char key, int x, int y)
 
     case '0': 
     case ')': ++depth;                    break;
+
+    case 'P':
+    case 'p': persProject=!persProject;   break;
 
     default:
         break;
@@ -366,7 +374,7 @@ main(int argc, char *argv[])
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
 
-    glutCreateWindow("OpenGLUT Shapes");
+    glutCreateWindow("FreeGLUT Shapes");
 
     glutReshapeFunc(resize);
     glutDisplayFunc(display);
